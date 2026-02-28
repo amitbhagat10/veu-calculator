@@ -72,10 +72,10 @@ export default function DashboardPage() {
     setLoading(true);
     setRebateResult(null);
 
-   const { data, error } = await supabase.rpc("calculate_veu_rebate", {
-  p_activity_id: selectedActivity,
-  p_product_id: selectedProduct
-});
+    const { data, error } = await supabase.rpc("calculate_veu_rebate", {
+      p_activity_id: selectedActivity,
+      p_product_id: selectedProduct
+    });
 
     setLoading(false);
 
@@ -98,19 +98,22 @@ export default function DashboardPage() {
     setRebateResult(null);
   };
 
+  const selectedBrandLabel =
+    brands.find((b) => b.id === selectedBrand)?.name || "";
+
+  const selectedProductLabel =
+    products.find((p) => p.id === selectedProduct)?.model_name || "";
+
+  const selectedActivityLabel =
+    activities.find((a) => a.id === selectedActivity)?.name || "";
+
   return (
     <div className="flex min-h-screen bg-[#eef2f7]">
 
       {/* SIDEBAR */}
       <aside className="w-64 bg-[#0C1E3B] text-white p-6 min-h-screen">
-
-        {/* Transparent Logo */}
         <div className="flex justify-center mb-10">
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="w-20 h-auto"
-          />
+          <img src="/logo.png" alt="Logo" className="w-20 h-auto" />
         </div>
 
         <nav className="space-y-2 text-sm">
@@ -131,10 +134,10 @@ export default function DashboardPage() {
         </nav>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN */}
       <main className="flex-1 p-14">
 
-        {/* Top Branded Header */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-[#1e3a8a] to-[#4f46e5] text-white p-6 rounded-xl shadow-lg mb-10">
           <h1 className="text-2xl font-bold">
             VEU Rebate Calculator
@@ -259,41 +262,68 @@ export default function DashboardPage() {
             <button
               onClick={handleCalculate}
               disabled={loading}
-              className="bg-indigo-700 text-white px-8 py-3 rounded-lg shadow hover:shadow-lg transition"
+              className="bg-indigo-700 text-white px-8 py-3 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
             >
               {loading ? "Calculating..." : "Calculate"}
             </button>
           </div>
 
-          {/* Result */}
+          {/* Elegant Result Card */}
           <AnimatePresence>
             {rebateResult !== null && (
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`mt-10 p-6 rounded-xl text-center shadow ${
-                  rebateResult > 0
-                    ? "bg-green-600 text-white"
-                    : "bg-red-600 text-white"
-                }`}
+                transition={{ duration: 0.35 }}
+                className="mt-12 relative bg-white rounded-2xl shadow-xl border border-gray-100 p-8"
               >
-                {rebateResult > 0 ? (
-                  <>
-                    <CheckCircle className="mx-auto mb-3" size={36} />
-                    <div className="text-lg font-semibold">
-                      Eligible Rebate
+                {/* Accent Bar */}
+                <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-green-500 to-emerald-600 rounded-l-2xl"></div>
+
+                <div className="ml-6">
+
+                  {rebateResult > 0 ? (
+                    <>
+                      <div className="flex items-center gap-3 mb-6">
+                        <CheckCircle className="text-green-600" size={28} />
+                        <h3 className="text-xl font-semibold text-gray-800">
+                          Scenario Result
+                        </h3>
+                      </div>
+
+                      <div className="mb-6">
+                        <h4 className="text-lg font-bold text-gray-900">
+                          {selectedBrandLabel} {selectedProductLabel}
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          {selectedActivityLabel}
+                        </p>
+                      </div>
+
+                      <div className="border-t pt-6 space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            Government Rebate
+                          </span>
+                          <span className="text-3xl font-bold text-green-600">
+                            ${Number(rebateResult).toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>GST</span>
+                          <span>Included</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-red-600 font-semibold">
+                      Not Eligible for Rebate
                     </div>
-                    <div className="text-3xl font-bold mt-2">
-                      ${Number(rebateResult).toLocaleString()}
-                    </div>
-                  </>
-                ) : (
-                  <div className="font-semibold">
-                    Not Eligible for Rebate
-                  </div>
-                )}
+                  )}
+
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
