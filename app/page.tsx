@@ -72,10 +72,9 @@ export default function DashboardPage() {
     setLoading(true);
     setRebateResult(null);
 
-    const { data, error } = await supabase.rpc("calculate_rebate", {
+   const { data, error } = await supabase.rpc("calculate_veu_rebate", {
   p_activity_id: selectedActivity,
-  p_product_id: selectedProduct,
-  p_postcode: postcode
+  p_product_id: selectedProduct
 });
 
     setLoading(false);
