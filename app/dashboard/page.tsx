@@ -138,7 +138,7 @@ export default function DashboardPage() {
         {/* Top Branded Header */}
         <div className="bg-gradient-to-r from-[#1e3a8a] to-[#4f46e5] text-white p-6 rounded-xl shadow-lg mb-10">
           <h1 className="text-2xl font-bold">
-            VEU Rebate Calculator
+            VEU Rebate Calculator V2
           </h1>
         </div>
 
