@@ -12,9 +12,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "GP Rebate Hub | VEU Calculator",
-  description: "VEU Rebate Calculator for Heat Pump Installations",
+export const metadata: Metadata =  {
+  title: "GP Solar | VEU Calculator",
+  description: "VEU Rebate Calculator",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({
