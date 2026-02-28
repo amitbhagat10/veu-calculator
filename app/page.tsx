@@ -312,8 +312,8 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="flex justify-between text-sm text-gray-500">
-                          <span>GST</span>
-                          <span>Included</span>
+                        <span>GST</span>
+                        <span>+ GST</span>
                         </div>
                       </div>
                     </>
