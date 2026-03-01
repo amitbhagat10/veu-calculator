@@ -9,7 +9,7 @@ export default function DashboardPage() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#eef2f7] dark:bg-slate-900 transition-colors duration-500 flex">
+    <div className="min-h-screen flex">
       <Sidebar
         collapsed={collapsed}
         setCollapsed={setCollapsed}
