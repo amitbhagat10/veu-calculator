@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata =  {
+export const metadata: Metadata = {
   title: "GP Solar | VEU Calculator",
   description: "VEU Rebate Calculator",
   icons: {
@@ -22,13 +22,23 @@ export const metadata: Metadata =  {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`
+          ${geistSans.variable} 
+          ${geistMono.variable} 
+          antialiased
+          bg-white 
+          text-slate-900
+          dark:bg-slate-900 
+          dark:text-white
+          transition-colors 
+          duration-500
+        `}
       >
         {children}
       </body>
