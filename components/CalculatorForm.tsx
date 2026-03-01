@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import ResultCard from "./ResultCard";
+import { CheckCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function CalculatorForm() {
   const [activities, setActivities] = useState<any[]>([]);
@@ -19,7 +20,6 @@ export default function CalculatorForm() {
   const [rebateResult, setRebateResult] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  /* ================= FETCH DATA ================= */
   useEffect(() => {
     fetchActivities();
   }, []);
@@ -34,7 +34,6 @@ export default function CalculatorForm() {
       .from("brands")
       .select("*")
       .eq("activity_id", activityId);
-
     if (data) setBrands(data);
   };
 
@@ -43,14 +42,30 @@ export default function CalculatorForm() {
       .from("products")
       .select("*")
       .eq("brand_id", brandId);
-
     if (data) setProducts(data);
   };
 
-  /* ================= CALCULATE ================= */
+  const handleActivityChange = (value: string) => {
+    setSelectedActivity(value);
+    setSelectedBrand("");
+    setSelectedProduct("");
+    setBrands([]);
+    setProducts([]);
+    setRebateResult(null);
+    fetchBrands(value);
+  };
+
+  const handleBrandChange = (value: string) => {
+    setSelectedBrand(value);
+    setSelectedProduct("");
+    setProducts([]);
+    setRebateResult(null);
+    fetchProducts(value);
+  };
+
   const handleCalculate = async () => {
-    if (!selectedProduct) {
-      alert("Please select model");
+    if (!selectedProduct || !postcode || !jobDate) {
+      alert("Please complete all fields");
       return;
     }
 
@@ -75,7 +90,6 @@ export default function CalculatorForm() {
     setRebateResult(data ?? 0);
   };
 
-  /* ================= RESET ================= */
   const handleReset = () => {
     setSelectedActivity("");
     setSelectedBrand("");
@@ -87,7 +101,6 @@ export default function CalculatorForm() {
     setRebateResult(null);
   };
 
-  /* ================= LABELS ================= */
   const selectedBrandLabel =
     brands.find((b) => b.id === selectedBrand)?.name || "";
 
@@ -98,23 +111,20 @@ export default function CalculatorForm() {
     activities.find((a) => a.id === selectedActivity)?.name || "";
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-10 max-w-4xl mx-auto transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-10 max-w-4xl mx-auto transition-colors duration-500">
 
       {/* Activity */}
       <div className="mb-8">
-        <label className="block font-semibold mb-2">
+        <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
           Activity
         </label>
         <select
           value={selectedActivity}
-          onChange={(e) => {
-            setSelectedActivity(e.target.value);
-            setSelectedBrand("");
-            setSelectedProduct("");
-            setRebateResult(null);
-            fetchBrands(e.target.value);
-          }}
-          className="w-full border rounded-lg p-3"
+          onChange={(e) => handleActivityChange(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+          bg-white dark:bg-slate-700 
+          text-gray-900 dark:text-white 
+          p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">Select Activity</option>
           {activities.map((a) => (
@@ -125,59 +135,77 @@ export default function CalculatorForm() {
         </select>
       </div>
 
-      {/* Brand & Model */}
-      {selectedActivity && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <select
-            value={selectedBrand}
-            onChange={(e) => {
-              setSelectedBrand(e.target.value);
-              setSelectedProduct("");
-              fetchProducts(e.target.value);
-            }}
-            className="border rounded-lg p-3"
+      {/* Product Section */}
+      <AnimatePresence>
+        {selectedActivity && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-10"
           >
-            <option value="">Select Brand</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <select
-            value={selectedProduct}
-            onChange={(e) =>
-              setSelectedProduct(e.target.value)
-            }
-            className="border rounded-lg p-3"
-          >
-            <option value="">Select Model</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.model_name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+              <select
+                value={selectedBrand}
+                onChange={(e) => handleBrandChange(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+                bg-white dark:bg-slate-700 
+                text-gray-900 dark:text-white 
+                p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">Select Brand</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedProduct}
+                onChange={(e) => setSelectedProduct(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+                bg-white dark:bg-slate-700 
+                text-gray-900 dark:text-white 
+                p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">Select Model</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.model_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Date & Postcode */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <input
           type="date"
           value={jobDate}
           onChange={(e) => setJobDate(e.target.value)}
-          className="border rounded-lg p-3"
+          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+          bg-white dark:bg-slate-700 
+          text-gray-900 dark:text-white 
+          p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
+
         <input
           type="text"
+          maxLength={4}
           value={postcode}
           onChange={(e) =>
             setPostcode(e.target.value.replace(/\D/g, ""))
           }
           placeholder="Postcode"
-          className="border rounded-lg p-3"
+          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+          bg-white dark:bg-slate-700 
+          text-gray-900 dark:text-white 
+          placeholder-gray-400 
+          p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
@@ -185,28 +213,67 @@ export default function CalculatorForm() {
       <div className="flex justify-between">
         <button
           onClick={handleReset}
-          className="bg-red-500 text-white px-6 py-3 rounded-lg"
+          className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition"
         >
           Reset
         </button>
 
         <button
           onClick={handleCalculate}
-          className="bg-indigo-700 text-white px-6 py-3 rounded-lg"
+          className="bg-indigo-700 text-white px-6 py-3 rounded-lg hover:bg-indigo-800 transition"
         >
           {loading ? "Calculating..." : "Calculate"}
         </button>
       </div>
 
       {/* Result */}
-      {rebateResult !== null && (
-        <ResultCard
-          rebateResult={rebateResult}
-          brand={selectedBrandLabel}
-          model={selectedProductLabel}
-          activity={selectedActivityLabel}
-        />
-      )}
+      <AnimatePresence>
+        {rebateResult !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-12 p-8 bg-slate-50 dark:bg-slate-700 rounded-2xl shadow-xl transition-colors"
+          >
+            {rebateResult > 0 ? (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <CheckCircle className="text-green-600" />
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                    Scenario Result
+                  </h3>
+                </div>
+
+                <div className="mb-4">
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {selectedBrandLabel} {selectedProductLabel}
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    {selectedActivityLabel}
+                  </p>
+                </div>
+
+                <div className="flex justify-between items-center border-t pt-6">
+                  <span className="text-gray-600 dark:text-gray-300">
+                    Government Rebate
+                  </span>
+                  <span className="text-3xl font-bold text-green-600">
+                    ${Number(rebateResult).toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="text-sm mt-2 text-gray-500 dark:text-gray-400">
+                  + GST
+                </div>
+              </>
+            ) : (
+              <div className="text-red-600 font-semibold">
+                Not Eligible
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
