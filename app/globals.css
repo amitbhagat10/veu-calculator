@@ -2,10 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional custom animation */
+/* Smooth theme transition */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  @apply bg-white text-gray-900;
+}
+
+/* Dark mode body override */
+.dark body {
+  @apply bg-slate-900 text-gray-100;
+}
+
+/* Optional animation utility */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
