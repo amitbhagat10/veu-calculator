@@ -116,7 +116,7 @@ export default function Header() {
     "
     >
       <div className="font-semibold text-lg">
-        GP Solar | VEU Calculator
+        GP HVAC | VEU Calculator
       </div>
 
       <div className="flex items-center gap-6">
