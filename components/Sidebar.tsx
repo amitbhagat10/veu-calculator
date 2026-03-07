@@ -1,47 +1,108 @@
 "use client";
 
-import { Menu, Calculator, Users, Briefcase } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Menu,
+  Calculator,
+  Users,
+  Briefcase,
+  Settings,
+} from "lucide-react";
 
-interface SidebarProps {
+type SidebarProps = {
   collapsed: boolean;
-  setCollapsed: (v: boolean) => void;
-}
+  setCollapsed: (value: boolean) => void;
+};
 
 export default function Sidebar({
   collapsed,
   setCollapsed,
 }: SidebarProps) {
+  const pathname = usePathname();
+
+  const navItems = [
+    {
+      name: "Calculator",
+      icon: Calculator,
+      path: "/",
+    },
+    {
+      name: "Users",
+      icon: Users,
+      path: "/admin/users",
+    },
+    {
+      name: "Jobs",
+      icon: Briefcase,
+      path: "/jobs",
+    },
+  ];
+
   return (
     <aside
-      className={`hidden md:flex flex-col ${
+      className={`fixed left-6 top-6 bottom-6 z-40 ${
         collapsed ? "w-20" : "w-64"
-      } bg-[#0C1E3B] text-white p-6 transition-all duration-300`}
+      } bg-[#0f172a]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col transition-all duration-300`}
     >
-      <div className="flex items-center justify-between mb-10">
+      {/* LOGO */}
+      <div className="p-5 flex items-center justify-between">
         {!collapsed && (
-          <img src="/logo.png" className="w-20" />
+          <img
+            src="/gp-logo-1.svg"
+            className="w-36 transition-all duration-300"
+          />
         )}
-        <button onClick={() => setCollapsed(!collapsed)}>
+
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="text-white"
+        >
           <Menu size={18} />
         </button>
       </div>
 
-      <nav className="space-y-3 text-sm">
-        <div className="bg-white/10 p-3 rounded-lg flex items-center gap-2">
-          <Calculator size={16} />
-          {!collapsed && "Calculator"}
-        </div>
+      {/* NAV */}
+      <nav className="flex-1 px-3 space-y-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.path;
 
-        <div className="hover:bg-white/10 p-3 rounded-lg flex items-center gap-2 cursor-pointer">
-          <Users size={16} />
-          {!collapsed && "Users"}
-        </div>
+          return (
+            <motion.a
+              key={item.name}
+              href={item.path}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className={`flex items-center gap-3 p-3 rounded-lg transition ${
+                active
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              <Icon size={18} />
 
-        <div className="hover:bg-white/10 p-3 rounded-lg flex items-center gap-2 cursor-pointer">
-          <Briefcase size={16} />
-          {!collapsed && "Jobs"}
-        </div>
+              {!collapsed && (
+                <span className="font-medium">
+                  {item.name}
+                </span>
+              )}
+            </motion.a>
+          );
+        })}
       </nav>
+
+      {/* FOOTER */}
+      <div className="p-4 border-t border-white/10">
+        <a
+          href="/settings"
+          className="flex items-center gap-3 text-gray-300 hover:text-white"
+        >
+          <Settings size={18} />
+          {!collapsed && "Settings"}
+        </a>
+      </div>
     </aside>
   );
 }

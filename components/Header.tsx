@@ -6,7 +6,6 @@ import { Bell, Sun, Moon, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
-  /* ================= STATE ================= */
   const [darkMode, setDarkMode] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -16,7 +15,6 @@ export default function Header() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  /* ================= LOAD USER ================= */
   useEffect(() => {
     const loadUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -30,13 +28,9 @@ export default function Header() {
     if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
       setDarkMode(true);
-    } else {
-      document.documentElement.classList.remove("dark");
-      setDarkMode(false);
     }
   }, []);
 
-  /* ================= CLICK OUTSIDE ================= */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -55,11 +49,14 @@ export default function Header() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+
     return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
   }, []);
 
-  /* ================= DARK MODE TOGGLE ================= */
   const toggleDarkMode = () => {
     if (darkMode) {
       document.documentElement.classList.remove("dark");
@@ -72,66 +69,70 @@ export default function Header() {
     }
   };
 
-  /* ================= LOGOUT ================= */
   const logout = async () => {
     await supabase.auth.signOut();
     window.location.reload();
   };
 
-  /* ================= INITIALS LOGIC ================= */
   const getInitials = () => {
     if (!user) return "?";
 
-    // 1️⃣ Try metadata name
-    const fullName =
+    const name =
       user.user_metadata?.full_name ||
       user.user_metadata?.name;
 
-    if (fullName && fullName.trim().length > 0) {
-      const parts = fullName.trim().split(" ");
-
+    if (name) {
+      const parts = name.split(" ");
       if (parts.length >= 2) {
         return (
           parts[0][0] + parts[1][0]
         ).toUpperCase();
       }
-
-      return fullName.substring(0, 2).toUpperCase();
+      return name.substring(0, 2).toUpperCase();
     }
 
-    // 2️⃣ Fallback to email
     if (user.email) {
-      const emailName = user.email.split("@")[0];
-      return emailName.substring(0, 2).toUpperCase();
+      return user.email.substring(0, 2).toUpperCase();
     }
 
-    // 3️⃣ Final fallback
     return "U";
   };
 
-  /* ================= UI ================= */
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-slate-800 shadow px-6 py-4 flex justify-between items-center transition-colors duration-500">
-
-      {/* TITLE */}
-      <div className="font-semibold text-lg text-gray-800 dark:text-white">
+    <header
+      className="
+      sticky top-4
+      z-30
+      mx-6
+      h-16
+      flex items-center justify-between
+      px-10
+      rounded-xl
+      bg-white/5
+      backdrop-blur-xl
+      border border-white/10
+      shadow-lg
+      text-white
+    "
+    >
+      <div className="font-semibold text-lg">
         GP Solar | VEU Calculator
       </div>
 
-      {/* RIGHT SECTION */}
       <div className="flex items-center gap-6">
+        {/* NOTIFICATIONS */}
 
-        {/* ================= NOTIFICATIONS ================= */}
         <div className="relative" ref={notificationRef}>
           <div
-            className="relative cursor-pointer text-gray-700 dark:text-white"
+            className="relative cursor-pointer"
             onClick={() =>
               setNotificationOpen(!notificationOpen)
             }
           >
             <Bell size={20} />
+
             {notificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 rounded-full">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-1.5 rounded-full">
                 {notificationCount}
               </span>
             )}
@@ -140,10 +141,10 @@ export default function Header() {
           <AnimatePresence>
             {notificationOpen && (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="absolute right-0 mt-3 w-64 bg-white dark:bg-slate-800 shadow-lg rounded-lg p-4 text-sm text-gray-700 dark:text-gray-200"
+                className="absolute right-0 mt-3 w-64 bg-white dark:bg-slate-800 shadow-xl rounded-lg p-4 text-sm text-gray-700 dark:text-gray-200"
               >
                 No new notifications
               </motion.div>
@@ -151,29 +152,37 @@ export default function Header() {
           </AnimatePresence>
         </div>
 
-        {/* ================= DARK MODE ================= */}
+        {/* DARK MODE */}
+
         <motion.button
           whileTap={{ rotate: 180 }}
           onClick={toggleDarkMode}
-          className="text-gray-700 dark:text-white"
         >
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          {darkMode ? (
+            <Sun size={20} />
+          ) : (
+            <Moon size={20} />
+          )}
         </motion.button>
 
-        {/* ================= PROFILE ================= */}
+        {/* PROFILE */}
+
         <div className="relative" ref={profileRef}>
           <div
-            onClick={() => setProfileOpen(!profileOpen)}
+            onClick={() =>
+              setProfileOpen(!profileOpen)
+            }
             className="cursor-pointer"
           >
             {user?.user_metadata?.avatar_url ? (
               <img
-                src={user.user_metadata.avatar_url}
-                alt="Avatar"
-                className="w-9 h-9 rounded-full object-cover border border-gray-300 dark:border-slate-600"
+                src={
+                  user.user_metadata.avatar_url
+                }
+                className="w-9 h-9 rounded-full object-cover"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+              <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-semibold text-sm">
                 {getInitials()}
               </div>
             )}
@@ -182,12 +191,12 @@ export default function Header() {
           <AnimatePresence>
             {profileOpen && (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="absolute right-0 mt-3 w-48 bg-white dark:bg-slate-800 shadow-lg rounded-lg p-2 text-sm"
+                className="absolute right-0 mt-3 w-48 bg-white dark:bg-slate-800 shadow-xl rounded-lg p-2 text-sm"
               >
-                <div className="p-2 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-slate-700">
+                <div className="p-2 border-b border-gray-200 dark:border-slate-700">
                   {user?.email}
                 </div>
 
@@ -202,7 +211,6 @@ export default function Header() {
             )}
           </AnimatePresence>
         </div>
-
       </div>
     </header>
   );

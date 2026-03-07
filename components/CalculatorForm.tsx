@@ -34,6 +34,7 @@ export default function CalculatorForm() {
       .from("brands")
       .select("*")
       .eq("activity_id", activityId);
+
     if (data) setBrands(data);
   };
 
@@ -42,6 +43,7 @@ export default function CalculatorForm() {
       .from("products")
       .select("*")
       .eq("brand_id", brandId);
+
     if (data) setProducts(data);
   };
 
@@ -111,169 +113,201 @@ export default function CalculatorForm() {
     activities.find((a) => a.id === selectedActivity)?.name || "";
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-10 max-w-4xl mx-auto transition-colors duration-500">
+    <div className="max-w-5xl mx-auto">
 
-      {/* Activity */}
+      {/* Page Header */}
       <div className="mb-8">
-        <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
-          Activity
-        </label>
-        <select
-          value={selectedActivity}
-          onChange={(e) => handleActivityChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-          bg-white dark:bg-slate-700 
-          text-gray-900 dark:text-white 
-          p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="">Select Activity</option>
-          {activities.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
+        <h2 className="text-2xl font-semibold text-white">
+          Grant Calculator
+        </h2>
+        <p className="text-gray-400 text-sm">
+          Calculate the available VEU rebate for selected products.
+        </p>
       </div>
 
-      {/* Product Section */}
-      <AnimatePresence>
-        {selectedActivity && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-10"
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 md:p-10 transition-colors">
+
+        {/* Activity */}
+        <div className="mb-8">
+          <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
+            Activity
+          </label>
+
+          <select
+            value={selectedActivity}
+            onChange={(e) => handleActivityChange(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+            bg-white dark:bg-slate-700 
+            text-gray-900 dark:text-white 
+            p-3 focus:ring-2 focus:ring-gporange"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <option value="">Select Activity</option>
 
-              <select
-                value={selectedBrand}
-                onChange={(e) => handleBrandChange(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-                bg-white dark:bg-slate-700 
-                text-gray-900 dark:text-white 
-                p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Select Brand</option>
-                {brands.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+            {activities.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              <select
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-                bg-white dark:bg-slate-700 
-                text-gray-900 dark:text-white 
-                p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Select Model</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.model_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Product Section */}
+        <AnimatePresence>
+          {selectedActivity && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-10"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-      {/* Date & Postcode */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        <input
-          type="date"
-          value={jobDate}
-          onChange={(e) => setJobDate(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-          bg-white dark:bg-slate-700 
-          text-gray-900 dark:text-white 
-          p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+                {/* Brand */}
+                <select
+                  value={selectedBrand}
+                  onChange={(e) =>
+                    handleBrandChange(e.target.value)
+                  }
+                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+                  bg-white dark:bg-slate-700 
+                  text-gray-900 dark:text-white 
+                  p-3 focus:ring-2 focus:ring-gporange"
+                >
+                  <option value="">Select Brand</option>
 
-        <input
-          type="text"
-          maxLength={4}
-          value={postcode}
-          onChange={(e) =>
-            setPostcode(e.target.value.replace(/\D/g, ""))
-          }
-          placeholder="Postcode"
-          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-          bg-white dark:bg-slate-700 
-          text-gray-900 dark:text-white 
-          placeholder-gray-400 
-          p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
 
-      {/* Buttons */}
-      <div className="flex justify-between">
-        <button
-          onClick={handleReset}
-          className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition"
-        >
-          Reset
-        </button>
+                {/* Model */}
+                <select
+                  value={selectedProduct}
+                  onChange={(e) =>
+                    setSelectedProduct(e.target.value)
+                  }
+                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+                  bg-white dark:bg-slate-700 
+                  text-gray-900 dark:text-white 
+                  p-3 focus:ring-2 focus:ring-gporange"
+                >
+                  <option value="">Select Model</option>
 
-        <button
-          onClick={handleCalculate}
-          className="bg-indigo-700 text-white px-6 py-3 rounded-lg hover:bg-indigo-800 transition"
-        >
-          {loading ? "Calculating..." : "Calculate"}
-        </button>
-      </div>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.model_name}
+                    </option>
+                  ))}
+                </select>
 
-      {/* Result */}
-      <AnimatePresence>
-        {rebateResult !== null && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-12 p-8 bg-slate-50 dark:bg-slate-700 rounded-2xl shadow-xl transition-colors"
-          >
-            {rebateResult > 0 ? (
-              <>
-                <div className="flex items-center gap-3 mb-6">
-                  <CheckCircle className="text-green-600" />
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                    Scenario Result
-                  </h3>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {selectedBrandLabel} {selectedProductLabel}
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    {selectedActivityLabel}
-                  </p>
-                </div>
-
-                <div className="flex justify-between items-center border-t pt-6">
-                  <span className="text-gray-600 dark:text-gray-300">
-                    Government Rebate
-                  </span>
-                  <span className="text-3xl font-bold text-green-600">
-                    ${Number(rebateResult).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="text-sm mt-2 text-gray-500 dark:text-gray-400">
-                  + GST
-                </div>
-              </>
-            ) : (
-              <div className="text-red-600 font-semibold">
-                Not Eligible
               </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* Date & Postcode */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+
+          <input
+            type="date"
+            value={jobDate}
+            onChange={(e) => setJobDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+            bg-white dark:bg-slate-700 
+            text-gray-900 dark:text-white 
+            p-3 focus:ring-2 focus:ring-gporange"
+          />
+
+          <input
+            type="text"
+            maxLength={4}
+            value={postcode}
+            onChange={(e) =>
+              setPostcode(e.target.value.replace(/\D/g, ""))
+            }
+            placeholder="Postcode"
+            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
+            bg-white dark:bg-slate-700 
+            text-gray-900 dark:text-white 
+            placeholder-gray-400 
+            p-3 focus:ring-2 focus:ring-gporange"
+          />
+
+        </div>
+
+        {/* Buttons */}
+        <div className="flex justify-between">
+
+          <button
+            onClick={handleReset}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg"
+          >
+            Reset
+          </button>
+
+          <button
+            onClick={handleCalculate}
+            className="bg-gporange hover:bg-gporangehover text-white px-8 py-3 rounded-lg transition"
+          >
+            {loading ? "Calculating..." : "Calculate"}
+          </button>
+
+        </div>
+
+        {/* Result */}
+        <AnimatePresence>
+          {rebateResult !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-12 p-8 bg-slate-50 dark:bg-slate-700 rounded-2xl shadow-xl transition-colors"
+            >
+
+              {rebateResult > 0 ? (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <CheckCircle className="text-gporange" />
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                      Scenario Result
+                    </h3>
+                  </div>
+
+                  <div className="mb-4">
+                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                      {selectedBrandLabel} {selectedProductLabel}
+                    </h4>
+
+                    <p className="text-sm text-gray-500 dark:text-gray-300">
+                      {selectedActivityLabel}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-center border-t pt-6">
+                    <span className="text-gray-600 dark:text-gray-300">
+                      Government Rebate
+                    </span>
+
+                    <span className="text-3xl font-bold text-gporange">
+                      ${Number(rebateResult).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="text-sm mt-2 text-gray-500 dark:text-gray-400">
+                    + GST
+                  </div>
+                </>
+              ) : (
+                <div className="text-red-600 font-semibold">
+                  Not Eligible
+                </div>
+              )}
+
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
     </div>
   );
 }
