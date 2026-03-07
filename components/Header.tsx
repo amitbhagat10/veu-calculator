@@ -100,26 +100,25 @@ export default function Header() {
 
   return (
     <header
-      className="
-      sticky top-4
-      z-30
-      mx-6
-      h-16
-      flex items-center justify-between
-      px-10
-      rounded-xl
-      bg-white/5
-      backdrop-blur-xl
-      border border-white/10
-      shadow-lg
-      text-white
-    "
-    >
-      <div className="font-semibold text-lg">
+  className="
+  sticky top-4
+  z-30
+  mx-6
+  h-16
+  flex items-center justify-between
+  px-10
+  rounded-xl
+  bg-white
+  border border-gray-200
+  shadow-md
+  text-gray-900
+"
+>
+      <div className="font-semibold text-lg text-blue-700">
         GP HVAC | VEU Calculator
       </div>
 
-      <div className="flex items-center gap-6">
+     <div className="flex items-center gap-6 text-gray-700">
         {/* NOTIFICATIONS */}
 
         <div className="relative" ref={notificationRef}>

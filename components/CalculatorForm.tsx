@@ -113,32 +113,33 @@ export default function CalculatorForm() {
     activities.find((a) => a.id === selectedActivity)?.name || "";
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
 
       {/* Page Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-white">
+        <h2 className="text-2xl font-semibold text-gray-900">
           Grant Calculator
         </h2>
-        <p className="text-gray-400 text-sm">
+
+        <p className="text-gray-600 text-sm">
           Calculate the available VEU rebate for selected products.
         </p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 md:p-10 transition-colors">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-md p-8 md:p-10">
 
         {/* Activity */}
         <div className="mb-8">
-          <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
+          <label className="block font-semibold mb-2 text-gray-800">
             Activity
           </label>
 
           <select
             value={selectedActivity}
             onChange={(e) => handleActivityChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-            bg-white dark:bg-slate-700 
-            text-gray-900 dark:text-white 
+            className="w-full rounded-lg border border-gray-300
+            bg-white
+            text-gray-900
             p-3 focus:ring-2 focus:ring-gporange"
           >
             <option value="">Select Activity</option>
@@ -167,9 +168,9 @@ export default function CalculatorForm() {
                   onChange={(e) =>
                     handleBrandChange(e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-                  bg-white dark:bg-slate-700 
-                  text-gray-900 dark:text-white 
+                  className="w-full rounded-lg border border-gray-300
+                  bg-white
+                  text-gray-900
                   p-3 focus:ring-2 focus:ring-gporange"
                 >
                   <option value="">Select Brand</option>
@@ -187,9 +188,9 @@ export default function CalculatorForm() {
                   onChange={(e) =>
                     setSelectedProduct(e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-                  bg-white dark:bg-slate-700 
-                  text-gray-900 dark:text-white 
+                  className="w-full rounded-lg border border-gray-300
+                  bg-white
+                  text-gray-900
                   p-3 focus:ring-2 focus:ring-gporange"
                 >
                   <option value="">Select Model</option>
@@ -213,9 +214,9 @@ export default function CalculatorForm() {
             type="date"
             value={jobDate}
             onChange={(e) => setJobDate(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-            bg-white dark:bg-slate-700 
-            text-gray-900 dark:text-white 
+            className="w-full rounded-lg border border-gray-300
+            bg-white
+            text-gray-900
             p-3 focus:ring-2 focus:ring-gporange"
           />
 
@@ -227,33 +228,33 @@ export default function CalculatorForm() {
               setPostcode(e.target.value.replace(/\D/g, ""))
             }
             placeholder="Postcode"
-            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 
-            bg-white dark:bg-slate-700 
-            text-gray-900 dark:text-white 
-            placeholder-gray-400 
+            className="w-full rounded-lg border border-gray-300
+            bg-white
+            text-gray-900
+            placeholder-gray-400
             p-3 focus:ring-2 focus:ring-gporange"
           />
 
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-between">
+<div className="flex justify-between">
 
-          <button
-            onClick={handleReset}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg"
-          >
-            Reset
-          </button>
+  <button
+    onClick={handleReset}
+    className="bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg transition"
+  >
+    Reset
+  </button>
 
-          <button
-            onClick={handleCalculate}
-            className="bg-gporange hover:bg-gporangehover text-white px-8 py-3 rounded-lg transition"
-          >
-            {loading ? "Calculating..." : "Calculate"}
-          </button>
+  <button
+    onClick={handleCalculate}
+    className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg transition"
+  >
+    {loading ? "Calculating..." : "Calculate"}
+  </button>
 
-        </div>
+</div>
 
         {/* Result */}
         <AnimatePresence>
@@ -261,30 +262,31 @@ export default function CalculatorForm() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-12 p-8 bg-slate-50 dark:bg-slate-700 rounded-2xl shadow-xl transition-colors"
+              className="mt-12 p-8 bg-gray-50 border border-gray-200 rounded-2xl shadow-md"
             >
 
               {rebateResult > 0 ? (
                 <>
                   <div className="flex items-center gap-3 mb-6">
                     <CheckCircle className="text-gporange" />
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+
+                    <h3 className="text-xl font-semibold text-gray-900">
                       Scenario Result
                     </h3>
                   </div>
 
                   <div className="mb-4">
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                    <h4 className="text-lg font-bold text-gray-900">
                       {selectedBrandLabel} {selectedProductLabel}
                     </h4>
 
-                    <p className="text-sm text-gray-500 dark:text-gray-300">
+                    <p className="text-sm text-gray-600">
                       {selectedActivityLabel}
                     </p>
                   </div>
 
                   <div className="flex justify-between items-center border-t pt-6">
-                    <span className="text-gray-600 dark:text-gray-300">
+                    <span className="text-gray-700">
                       Government Rebate
                     </span>
 
@@ -293,7 +295,7 @@ export default function CalculatorForm() {
                     </span>
                   </div>
 
-                  <div className="text-sm mt-2 text-gray-500 dark:text-gray-400">
+                  <div className="text-sm mt-2 text-gray-500">
                     + GST
                   </div>
                 </>

@@ -13,11 +13,7 @@ export default function DashboardPage() {
   return (
     <div
       className="
-      min-h-screen
-      bg-gradient-to-br
-      from-[#020617]
-      via-[#0b1f3a]
-      to-[#020617]
+      min-h-screen bg-[#eef2f7]
     "
     >
       <Sidebar

@@ -43,10 +43,10 @@ export default function Sidebar({
     <aside
       className={`fixed left-6 top-6 bottom-6 z-40 ${
         collapsed ? "w-20" : "w-64"
-      } bg-[#0f172a]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col transition-all duration-300`}
+      } bg-white border border-gray-200 rounded-2xl shadow-xl flex flex-col transition-all duration-300`}
     >
       {/* LOGO */}
-      <div className="p-5 flex items-center justify-between">
+      <div className="p-5 flex items-center justify-between border-b border-gray-200">
         {!collapsed && (
           <img
             src="/gp-logo-1.svg"
@@ -56,14 +56,14 @@ export default function Sidebar({
 
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-white"
+          className="text-gray-600 hover:text-gray-900 transition"
         >
           <Menu size={18} />
         </button>
       </div>
 
       {/* NAV */}
-      <nav className="flex-1 px-3 space-y-2">
+      <nav className="flex-1 px-3 space-y-2 pt-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.path;
@@ -78,7 +78,7 @@ export default function Sidebar({
               className={`flex items-center gap-3 p-3 rounded-lg transition ${
                 active
                   ? "bg-blue-600 text-white shadow-md"
-                  : "text-gray-300 hover:bg-white/10"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               }`}
             >
               <Icon size={18} />
@@ -94,10 +94,10 @@ export default function Sidebar({
       </nav>
 
       {/* FOOTER */}
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t border-gray-200">
         <a
           href="/settings"
-          className="flex items-center gap-3 text-gray-300 hover:text-white"
+          className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition"
         >
           <Settings size={18} />
           {!collapsed && "Settings"}

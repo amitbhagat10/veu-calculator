@@ -13,13 +13,13 @@ export default function DashboardWidgets() {
       {widgets.map((w, i) => (
         <div
           key={i}
-          className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6 shadow-lg"
+          className="bg-white border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition"
         >
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-600 text-sm font-medium">
             {w.title}
           </p>
 
-          <h2 className="text-2xl font-semibold text-white mt-2">
+          <h2 className="text-2xl font-bold text-gray-900 mt-2">
             {w.value}
           </h2>
         </div>

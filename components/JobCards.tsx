@@ -1,49 +1,101 @@
 "use client";
 
+import { motion } from "framer-motion";
+
+type Job = {
+  id: string;
+  customerName: string;
+  suburb: string;
+  rebate: number;
+  status: "Pending" | "Approved" | "Rejected";
+};
+
 export default function JobCards() {
-  const jobs = [
+
+  // Temporary sample jobs
+  const jobs: Job[] = [
     {
-      customer: "John Smith",
+      id: "1",
+      customerName: "John Smith",
       suburb: "Craigieburn",
-      rebate: "$1,500",
+      rebate: 1500,
       status: "Pending",
     },
     {
-      customer: "Sarah Lee",
+      id: "2",
+      customerName: "Sarah Lee",
       suburb: "Reservoir",
-      rebate: "$1,200",
+      rebate: 1200,
       status: "Approved",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-6">
-      {jobs.map((job, i) => (
-        <div
-          key={i}
-          className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6 shadow-lg"
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+
+      {jobs.map((job) => (
+        <motion.div
+          key={job.id}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="
+            bg-white
+            border border-gray-200
+            rounded-xl
+            shadow-sm
+            p-6
+            flex
+            justify-between
+            items-start
+            hover:shadow-md
+            transition
+          "
         >
-          <div className="flex justify-between">
-            <div>
-              <h3 className="text-white font-semibold">
-                {job.customer}
-              </h3>
 
-              <p className="text-gray-400 text-sm">
-                {job.suburb}
-              </p>
-            </div>
+          {/* LEFT SIDE */}
+          <div>
 
-            <span className="text-xs px-2 py-1 rounded bg-green-600/20 text-green-400">
-              {job.status}
-            </span>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {job.customerName}
+            </h3>
+
+            <p className="text-sm text-gray-500 mt-1">
+              {job.suburb}
+            </p>
+
+            <p className="text-orange-500 font-bold text-xl mt-4">
+              ${job.rebate.toLocaleString()}
+            </p>
+
           </div>
 
-          <div className="mt-6 text-xl text-orange-400 font-semibold">
-            {job.rebate}
+          {/* STATUS BADGE */}
+          <div>
+
+            {job.status === "Approved" && (
+              <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-lg font-medium">
+                Approved
+              </span>
+            )}
+
+            {job.status === "Pending" && (
+              <span className="bg-yellow-100 text-yellow-700 text-xs px-3 py-1 rounded-lg font-medium">
+                Pending
+              </span>
+            )}
+
+            {job.status === "Rejected" && (
+              <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-lg font-medium">
+                Rejected
+              </span>
+            )}
+
           </div>
-        </div>
+
+        </motion.div>
       ))}
+
     </div>
   );
 }

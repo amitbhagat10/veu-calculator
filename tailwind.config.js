@@ -8,14 +8,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        gpblue: "#1787C8",
-        gpdark: "#0C1E3B",
-        gporange: "#F59E0B",
-        gporangehover: "#D97706",
-      },
-      backgroundImage: {
-        "gp-gradient":
-          "linear-gradient(135deg, #1787C8 0%, #0C1E3B 100%)",
+        gpblue: "#1f4fa3",
+        gpblue2: "#1f8bb6",
+        gporange: "#f59e0b",
+        gporangehover: "#d97706",
+        gplight: "#f4f6f9",
       },
     },
   },
