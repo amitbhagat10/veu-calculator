@@ -13,31 +13,36 @@ import {
 type SidebarProps = {
   collapsed: boolean;
   setCollapsed: (value: boolean) => void;
+  role?: string;
 };
 
 export default function Sidebar({
   collapsed,
   setCollapsed,
+  role,
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const navItems = [
-    {
-      name: "Calculator",
-      icon: Calculator,
-      path: "/",
-    },
-    {
-      name: "Users",
-      icon: Users,
-      path: "/admin/users",
-    },
-    {
-      name: "Jobs",
-      icon: Briefcase,
-      path: "/jobs",
-    },
-  ];
+const navItems = [
+  {
+    name: "Calculator",
+    icon: Calculator,
+    path: "/",
+    roles: ["admin", "installer"],
+  },
+  {
+    name: "Users",
+    icon: Users,
+    path: "/admin/users",
+    roles: ["admin"], // only admin
+  },
+  {
+    name: "Jobs",
+    icon: Briefcase,
+    path: "/jobs",
+    roles: ["admin", "installer"],
+  },
+];
 
   return (
     <aside
@@ -64,7 +69,9 @@ export default function Sidebar({
 
       {/* NAV */}
       <nav className="flex-1 px-3 space-y-2 pt-4">
-        {navItems.map((item) => {
+        {navItems
+  .filter((item) => item.roles.includes(role || ""))
+  .map((item) => {
           const Icon = item.icon;
           const active = pathname === item.path;
 
