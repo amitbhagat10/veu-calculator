@@ -51,8 +51,6 @@ export default function CalculatorForm() {
       return;
     }
 
-    console.log("Fetched scenarios for activity:", activityId, data);
-
     if (data) setScenarios(data);
   };
 
@@ -71,13 +69,18 @@ export default function CalculatorForm() {
     if (data) setBrands(data);
   };
 
-  const fetchProducts = async (brandId: string, scenarioId: string) => {
-    const { data, error } = await supabase
+  const fetchProducts = async (brandId: string, scenarioId?: string) => {
+    let query = supabase
       .from("products")
       .select("*")
       .eq("brand_id", brandId)
-      .eq("scenario_id", scenarioId)
       .order("model_name");
+
+    if (scenarioId) {
+      query = query.eq("scenario_id", scenarioId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching products:", error);
@@ -86,6 +89,12 @@ export default function CalculatorForm() {
 
     if (data) setProducts(data);
   };
+
+  const selectedActivityLabel =
+    activities.find((a) => a.id === selectedActivity)?.name || "";
+
+  const hideScenario =
+    selectedActivityLabel === "Water Heating - New Install / No Decommissioning";
 
   const handleActivityChange = async (value: string) => {
     setSelectedActivity(value);
@@ -100,8 +109,14 @@ export default function CalculatorForm() {
 
     if (!value) return;
 
-    await fetchScenarios(value);
     await fetchBrands(value);
+
+    const activityRow = activities.find((a) => a.id === value);
+    const activityName = activityRow?.name || "";
+
+    if (activityName !== "Water Heating - New Install / No Decommissioning") {
+      await fetchScenarios(value);
+    }
   };
 
   const handleScenarioChange = async (value: string) => {
@@ -118,7 +133,14 @@ export default function CalculatorForm() {
     setProducts([]);
     setRebateResult(null);
 
-    if (!value || !selectedScenario) return;
+    if (!value) return;
+
+    if (hideScenario) {
+      await fetchProducts(value);
+      return;
+    }
+
+    if (!selectedScenario) return;
 
     await fetchProducts(value, selectedScenario);
   };
@@ -126,13 +148,17 @@ export default function CalculatorForm() {
   const handleCalculate = async () => {
     if (
       !selectedActivity ||
-      !selectedScenario ||
       !selectedBrand ||
       !selectedProduct ||
       !postcode ||
       !jobDate
     ) {
       alert("Please complete all fields");
+      return;
+    }
+
+    if (!hideScenario && !selectedScenario) {
+      alert("Please select a scenario");
       return;
     }
 
@@ -175,9 +201,6 @@ export default function CalculatorForm() {
   const selectedProductLabel =
     products.find((p) => p.id === selectedProduct)?.model_name || "";
 
-  const selectedActivityLabel =
-    activities.find((a) => a.id === selectedActivity)?.name || "";
-
   const selectedScenarioLabel =
     scenarios.find((s) => s.id === selectedScenario)?.name || "";
 
@@ -216,7 +239,7 @@ export default function CalculatorForm() {
         </div>
 
         {/* Scenario */}
-        {selectedActivity && (
+        {selectedActivity && !hideScenario && (
           <div className="mb-8">
             <label className="block font-semibold mb-2 text-gray-800">
               Scenario
@@ -254,7 +277,7 @@ export default function CalculatorForm() {
                 <select
                   value={selectedBrand}
                   onChange={(e) => handleBrandChange(e.target.value)}
-                  disabled={!selectedScenario}
+                  disabled={!hideScenario && !selectedScenario}
                   className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 disabled:bg-gray-100"
                 >
                   <option value="">Select Brand</option>
@@ -275,7 +298,7 @@ export default function CalculatorForm() {
                 <select
                   value={selectedProduct}
                   onChange={(e) => setSelectedProduct(e.target.value)}
-                  disabled={!selectedBrand || !selectedScenario}
+                  disabled={!selectedBrand}
                   className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 disabled:bg-gray-100"
                 >
                   <option value="">Select Model</option>
@@ -348,7 +371,7 @@ export default function CalculatorForm() {
             brand={selectedBrandLabel}
             model={selectedProductLabel}
             activity={selectedActivityLabel}
-            scenario={selectedScenarioLabel}
+            scenario={hideScenario ? "" : selectedScenarioLabel}
           />
         )}
       </div>

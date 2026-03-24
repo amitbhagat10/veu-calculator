@@ -8,7 +8,7 @@ interface Props {
   brand: string;
   model: string;
   activity: string;
-  scenario: string;
+  scenario?: string;
 }
 
 export default function ResultCard({
@@ -48,9 +48,11 @@ export default function ResultCard({
           {activity}
         </p>
 
-        <p className="text-gray-500 text-sm mt-1">
-          {scenario}
-        </p>
+        {scenario && (
+          <p className="text-gray-500 text-sm mt-1">
+            {scenario}
+          </p>
+        )}
       </div>
 
       <div className="border-t border-gray-200 pt-6">
