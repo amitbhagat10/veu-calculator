@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { CheckCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import ResultCard from "@/components/ResultCard";
 
 export default function CalculatorForm() {
   const [activities, setActivities] = useState<any[]>([]);
+  const [scenarios, setScenarios] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
 
   const [selectedActivity, setSelectedActivity] = useState("");
+  const [selectedScenario, setSelectedScenario] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
 
@@ -25,48 +26,91 @@ export default function CalculatorForm() {
   }, []);
 
   const fetchActivities = async () => {
-    const { data } = await supabase.from("activities").select("*");
-    if (data) setActivities(data);
+    const { data, error } = await supabase
+      .from("activities")
+      .select("*")
+      .order("name");
+
+    if (!error && data) setActivities(data);
+  };
+
+  const fetchScenarios = async (activityId: string) => {
+    const { data, error } = await supabase
+      .from("scenarios")
+      .select("*")
+      .eq("activity_id", activityId)
+      .order("name");
+
+    if (!error && data) setScenarios(data);
   };
 
   const fetchBrands = async (activityId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("brands")
       .select("*")
-      .eq("activity_id", activityId);
+      .eq("activity_id", activityId)
+      .order("name");
 
-    if (data) setBrands(data);
+    if (!error && data) setBrands(data);
   };
 
-  const fetchProducts = async (brandId: string) => {
-    const { data } = await supabase
+  const fetchProducts = async (brandId: string, scenarioId: string) => {
+    const { data, error } = await supabase
       .from("products")
       .select("*")
-      .eq("brand_id", brandId);
+      .eq("brand_id", brandId)
+      .eq("scenario_id", scenarioId)
+      .order("model_name");
 
-    if (data) setProducts(data);
+    if (!error && data) setProducts(data);
   };
 
-  const handleActivityChange = (value: string) => {
+  const handleActivityChange = async (value: string) => {
     setSelectedActivity(value);
+
+    setSelectedScenario("");
     setSelectedBrand("");
     setSelectedProduct("");
+
+    setScenarios([]);
     setBrands([]);
     setProducts([]);
     setRebateResult(null);
-    fetchBrands(value);
+
+    if (!value) return;
+
+    await fetchScenarios(value);
+    await fetchBrands(value);
   };
 
-  const handleBrandChange = (value: string) => {
+  const handleScenarioChange = async (value: string) => {
+    setSelectedScenario(value);
+    setSelectedBrand("");
+    setSelectedProduct("");
+    setProducts([]);
+    setRebateResult(null);
+  };
+
+  const handleBrandChange = async (value: string) => {
     setSelectedBrand(value);
     setSelectedProduct("");
     setProducts([]);
     setRebateResult(null);
-    fetchProducts(value);
+
+    if (!value || !selectedScenario) return;
+
+    await fetchProducts(value, selectedScenario);
   };
 
   const handleCalculate = async () => {
-    if (!selectedProduct || !postcode || !jobDate) {
+    if (
+      !selectedActivity ||
+      !selectedScenario ||
+      !selectedBrand ||
+      !selectedProduct ||
+      !postcode ||
+      !jobDate
+    ) {
       alert("Please complete all fields");
       return;
     }
@@ -74,13 +118,11 @@ export default function CalculatorForm() {
     setLoading(true);
     setRebateResult(null);
 
-    const { data, error } = await supabase.rpc(
-      "calculate_veu_rebate",
-      {
-        p_activity_id: selectedActivity,
-        p_product_id: selectedProduct,
-      }
-    );
+    const { data, error } = await supabase
+      .from("products")
+      .select("rebate_amount")
+      .eq("id", selectedProduct)
+      .single();
 
     setLoading(false);
 
@@ -89,15 +131,17 @@ export default function CalculatorForm() {
       return;
     }
 
-    setRebateResult(data ?? 0);
+    setRebateResult(Number(data?.rebate_amount ?? 0));
   };
 
   const handleReset = () => {
     setSelectedActivity("");
+    setSelectedScenario("");
     setSelectedBrand("");
     setSelectedProduct("");
     setPostcode("");
     setJobDate("");
+    setScenarios([]);
     setBrands([]);
     setProducts([]);
     setRebateResult(null);
@@ -112,10 +156,11 @@ export default function CalculatorForm() {
   const selectedActivityLabel =
     activities.find((a) => a.id === selectedActivity)?.name || "";
 
+  const selectedScenarioLabel =
+    scenarios.find((s) => s.id === selectedScenario)?.name || "";
+
   return (
     <div className="max-w-6xl mx-auto">
-
-      {/* Page Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-gray-900">
           Grant Calculator
@@ -127,7 +172,6 @@ export default function CalculatorForm() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-2xl shadow-md p-8 md:p-10">
-
         {/* Activity */}
         <div className="mb-8">
           <label className="block font-semibold mb-2 text-gray-800">
@@ -137,10 +181,7 @@ export default function CalculatorForm() {
           <select
             value={selectedActivity}
             onChange={(e) => handleActivityChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-300
-            bg-white
-            text-gray-900
-            p-3 focus:ring-2 focus:ring-gporange"
+            className="w-full rounded-lg border border-gray-300 bg-white text-gray-900 p-3 focus:ring-2 focus:ring-orange-500"
           >
             <option value="">Select Activity</option>
 
@@ -152,26 +193,47 @@ export default function CalculatorForm() {
           </select>
         </div>
 
-        {/* Product Section */}
-        <AnimatePresence>
-          {selectedActivity && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-10"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Scenario */}
+        {selectedActivity && (
+          <div className="mb-8">
+            <label className="block font-semibold mb-2 text-gray-800">
+              Scenario
+            </label>
 
-                {/* Brand */}
+            <select
+              value={selectedScenario}
+              onChange={(e) => handleScenarioChange(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white text-gray-900 p-3 focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="">Select Scenario</option>
+
+              {scenarios.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Product Section */}
+        {selectedActivity && (
+          <div className="mb-10">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+              Product
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block font-semibold text-gray-900 mb-2">
+                  Brand
+                </label>
+
                 <select
                   value={selectedBrand}
-                  onChange={(e) =>
-                    handleBrandChange(e.target.value)
-                  }
-                  className="w-full rounded-lg border border-gray-300
-                  bg-white
-                  text-gray-900
-                  p-3 focus:ring-2 focus:ring-gporange"
+                  onChange={(e) => handleBrandChange(e.target.value)}
+                  disabled={!selectedScenario}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 disabled:bg-gray-100"
                 >
                   <option value="">Select Brand</option>
 
@@ -181,17 +243,18 @@ export default function CalculatorForm() {
                     </option>
                   ))}
                 </select>
+              </div>
 
-                {/* Model */}
+              <div>
+                <label className="block font-semibold text-gray-900 mb-2">
+                  Model
+                </label>
+
                 <select
                   value={selectedProduct}
-                  onChange={(e) =>
-                    setSelectedProduct(e.target.value)
-                  }
-                  className="w-full rounded-lg border border-gray-300
-                  bg-white
-                  text-gray-900
-                  p-3 focus:ring-2 focus:ring-gporange"
+                  onChange={(e) => setSelectedProduct(e.target.value)}
+                  disabled={!selectedBrand || !selectedScenario}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900 disabled:bg-gray-100"
                 >
                   <option value="">Select Model</option>
 
@@ -201,114 +264,71 @@ export default function CalculatorForm() {
                     </option>
                   ))}
                 </select>
-
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
 
-        {/* Date & Postcode */}
+        {/* Job Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div>
+            <label className="block font-semibold text-gray-900 mb-2">
+              Date
+            </label>
 
-          <input
-            type="date"
-            value={jobDate}
-            onChange={(e) => setJobDate(e.target.value)}
-            className="w-full rounded-lg border border-gray-300
-            bg-white
-            text-gray-900
-            p-3 focus:ring-2 focus:ring-gporange"
-          />
+            <input
+              type="date"
+              value={jobDate}
+              onChange={(e) => setJobDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900"
+            />
+          </div>
 
-          <input
-            type="text"
-            maxLength={4}
-            value={postcode}
-            onChange={(e) =>
-              setPostcode(e.target.value.replace(/\D/g, ""))
-            }
-            placeholder="Postcode"
-            className="w-full rounded-lg border border-gray-300
-            bg-white
-            text-gray-900
-            placeholder-gray-400
-            p-3 focus:ring-2 focus:ring-gporange"
-          />
+          <div>
+            <label className="block font-semibold text-gray-900 mb-2">
+              Postcode
+            </label>
 
+            <input
+              type="text"
+              maxLength={4}
+              value={postcode}
+              onChange={(e) =>
+                setPostcode(e.target.value.replace(/\D/g, ""))
+              }
+              className="w-full border border-gray-300 rounded-lg p-3 bg-white text-gray-900"
+            />
+          </div>
         </div>
 
         {/* Buttons */}
-<div className="flex justify-between">
+        <div className="flex justify-between">
+          <button
+            onClick={handleReset}
+            className="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300 transition"
+          >
+            Reset
+          </button>
 
-  <button
-    onClick={handleReset}
-    className="bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg transition"
-  >
-    Reset
-  </button>
-
-  <button
-    onClick={handleCalculate}
-    className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg transition"
-  >
-    {loading ? "Calculating..." : "Calculate"}
-  </button>
-
-</div>
+          <button
+            onClick={handleCalculate}
+            disabled={loading}
+            className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition"
+          >
+            {loading ? "Calculating..." : "Calculate"}
+          </button>
+        </div>
 
         {/* Result */}
-        <AnimatePresence>
-          {rebateResult !== null && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-12 p-8 bg-gray-50 border border-gray-200 rounded-2xl shadow-md"
-            >
-
-              {rebateResult > 0 ? (
-                <>
-                  <div className="flex items-center gap-3 mb-6">
-                    <CheckCircle className="text-gporange" />
-
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      Scenario Result
-                    </h3>
-                  </div>
-
-                  <div className="mb-4">
-                    <h4 className="text-lg font-bold text-gray-900">
-                      {selectedBrandLabel} {selectedProductLabel}
-                    </h4>
-
-                    <p className="text-sm text-gray-600">
-                      {selectedActivityLabel}
-                    </p>
-                  </div>
-
-                  <div className="flex justify-between items-center border-t pt-6">
-                    <span className="text-gray-700">
-                      Government Rebate
-                    </span>
-
-                    <span className="text-3xl font-bold text-gporange">
-                      ${Number(rebateResult).toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="text-sm mt-2 text-gray-500">
-                    + GST
-                  </div>
-                </>
-              ) : (
-                <div className="text-red-600 font-semibold">
-                  Not Eligible
-                </div>
-              )}
-
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+        {rebateResult !== null && (
+          <ResultCard
+            rebateResult={rebateResult}
+            brand={selectedBrandLabel}
+            model={selectedProductLabel}
+            activity={selectedActivityLabel}
+            scenario={selectedScenarioLabel}
+          />
+        )}
       </div>
     </div>
   );
