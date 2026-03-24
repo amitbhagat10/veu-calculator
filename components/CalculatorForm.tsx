@@ -31,7 +31,12 @@ export default function CalculatorForm() {
       .select("*")
       .order("name");
 
-    if (!error && data) setActivities(data);
+    if (error) {
+      console.error("Error fetching activities:", error);
+      return;
+    }
+
+    if (data) setActivities(data);
   };
 
   const fetchScenarios = async (activityId: string) => {
@@ -41,7 +46,14 @@ export default function CalculatorForm() {
       .eq("activity_id", activityId)
       .order("name");
 
-    if (!error && data) setScenarios(data);
+    if (error) {
+      console.error("Error fetching scenarios:", error);
+      return;
+    }
+
+    console.log("Fetched scenarios for activity:", activityId, data);
+
+    if (data) setScenarios(data);
   };
 
   const fetchBrands = async (activityId: string) => {
@@ -51,7 +63,12 @@ export default function CalculatorForm() {
       .eq("activity_id", activityId)
       .order("name");
 
-    if (!error && data) setBrands(data);
+    if (error) {
+      console.error("Error fetching brands:", error);
+      return;
+    }
+
+    if (data) setBrands(data);
   };
 
   const fetchProducts = async (brandId: string, scenarioId: string) => {
@@ -62,12 +79,16 @@ export default function CalculatorForm() {
       .eq("scenario_id", scenarioId)
       .order("model_name");
 
-    if (!error && data) setProducts(data);
+    if (error) {
+      console.error("Error fetching products:", error);
+      return;
+    }
+
+    if (data) setProducts(data);
   };
 
   const handleActivityChange = async (value: string) => {
     setSelectedActivity(value);
-
     setSelectedScenario("");
     setSelectedBrand("");
     setSelectedProduct("");
@@ -127,6 +148,7 @@ export default function CalculatorForm() {
     setLoading(false);
 
     if (error) {
+      console.error("Calculation error:", error);
       alert("Calculation error");
       return;
     }
