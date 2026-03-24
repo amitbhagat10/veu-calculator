@@ -23,26 +23,33 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-const navItems = [
-  {
-    name: "Calculator",
-    icon: Calculator,
-    path: "/",
-    roles: ["admin", "installer"],
-  },
-  {
-    name: "Users",
-    icon: Users,
-    path: "/admin/users",
-    roles: ["admin"], // only admin
-  },
-  {
-    name: "Jobs",
-    icon: Briefcase,
-    path: "/jobs",
-    roles: ["admin", "installer"],
-  },
-];
+  const navItems = [
+    {
+      name: "Calculator",
+      icon: Calculator,
+      path: "/dashboard",
+      roles: ["admin", "installer"],
+    },
+    {
+      name: "Jobs",
+      icon: Briefcase,
+      path: "/jobs",
+      roles: ["admin", "installer"],
+    },
+    {
+      name: "Users",
+      icon: Users,
+      path: "/admin/users",
+      roles: ["admin"],
+    },
+  ];
+
+  const normalizedRole = (role || "").toLowerCase().trim();
+
+  const visibleItems =
+    !normalizedRole
+      ? navItems
+      : navItems.filter((item) => item.roles.includes(normalizedRole));
 
   return (
     <aside
@@ -50,11 +57,12 @@ const navItems = [
         collapsed ? "w-20" : "w-64"
       } bg-white border border-gray-200 rounded-2xl shadow-xl flex flex-col transition-all duration-300`}
     >
-      {/* LOGO */}
+      {/* Logo */}
       <div className="p-5 flex items-center justify-between border-b border-gray-200">
         {!collapsed && (
           <img
             src="/gp-logo-1.svg"
+            alt="GP HVAC"
             className="w-36 transition-all duration-300"
           />
         )}
@@ -67,20 +75,20 @@ const navItems = [
         </button>
       </div>
 
-      {/* NAV */}
+      {/* Nav */}
       <nav className="flex-1 px-3 space-y-2 pt-4">
-        {navItems
-  .filter((item) => item.roles.includes(role || ""))
-  .map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.path;
+          const active =
+            pathname === item.path ||
+            (item.path !== "/dashboard" && pathname.startsWith(item.path));
 
           return (
             <motion.a
               key={item.name}
               href={item.path}
               whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 300 }}
               className={`flex items-center gap-3 p-3 rounded-lg transition ${
                 active
@@ -89,18 +97,13 @@ const navItems = [
               }`}
             >
               <Icon size={18} />
-
-              {!collapsed && (
-                <span className="font-medium">
-                  {item.name}
-                </span>
-              )}
+              {!collapsed && <span className="font-medium">{item.name}</span>}
             </motion.a>
           );
         })}
       </nav>
 
-      {/* FOOTER */}
+      {/* Footer */}
       <div className="p-4 border-t border-gray-200">
         <a
           href="/settings"
