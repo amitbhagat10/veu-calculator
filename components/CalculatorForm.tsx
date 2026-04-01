@@ -39,7 +39,6 @@ export default function CalculatorForm() {
   const [postcode, setPostcode] = useState("");
   const [jobDate, setJobDate] = useState("");
 
-  // VEEC price — editable, auto-loaded from DB on mount
   const [veecPrice, setVeecPrice] = useState<number>(83.60);
   const [veecPriceInput, setVeecPriceInput] = useState<string>("83.60");
 
@@ -52,7 +51,6 @@ export default function CalculatorForm() {
     fetchCurrentVeecPrice();
   }, []);
 
-  // Load current VEEC price from veu_global_params table
   const fetchCurrentVeecPrice = async () => {
     const { data, error } = await supabase
       .from("veu_global_params")
@@ -67,13 +65,11 @@ export default function CalculatorForm() {
     }
   };
 
-  // When price input changes, update state + recalculate rebate live
   const handleVeecPriceChange = (value: string) => {
     setVeecPriceInput(value);
     const parsed = parseFloat(value);
     if (!isNaN(parsed) && parsed > 0) {
       setVeecPrice(parsed);
-      // If a result already exists, update rebate value instantly
       if (veuResult) {
         setVeuResult({
           ...veuResult,
@@ -140,12 +136,8 @@ export default function CalculatorForm() {
     setCalcError(null);
     if (!value) return;
     await fetchBrands(value);
-    const activityName =
-      activities.find((a) => a.id === value)?.name || "";
-    if (
-      activityName !==
-      "Water Heating - New Install / No Decommissioning"
-    ) {
+    const activityName = activities.find((a) => a.id === value)?.name || "";
+    if (activityName !== "Water Heating - New Install / No Decommissioning") {
       await fetchScenarios(value);
     }
   };
@@ -194,14 +186,22 @@ export default function CalculatorForm() {
     setVeuResult(null);
     setCalcError(null);
 
-    const { data, error } = await supabase.rpc("calculate_rebate", {
+    const rpcParams = {
       p_product_id:  selectedProduct,
       p_postcode:    Number(postcode),
       p_job_date:    jobDate,
       p_activity_id: selectedActivity,
       p_scenario_id: selectedScenario || null,
       p_veec_price:  veecPrice,
-    });
+    };
+
+    // DEBUG — remove after confirming it works
+    console.log("=== calculate_rebate RPC params ===", rpcParams);
+
+    const { data, error } = await supabase.rpc("calculate_rebate", rpcParams);
+
+    // DEBUG — remove after confirming it works
+    console.log("=== calculate_rebate RPC response ===", { data, error });
 
     setLoading(false);
 
@@ -264,7 +264,6 @@ export default function CalculatorForm() {
               VEEC Spot Price ($/certificate)
             </label>
           </div>
-
           <p className="text-xs text-blue-600 mb-4">
             Market price changes daily based on supply &amp; demand. Check
             current price at{" "}
@@ -287,7 +286,6 @@ export default function CalculatorForm() {
             </a>
             . Current market rate: ~$83.50–$84.00
           </p>
-
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 bg-white border border-blue-300 rounded-lg px-3 py-2">
               <span className="text-gray-500 font-medium">$</span>
@@ -301,10 +299,7 @@ export default function CalculatorForm() {
                 className="w-24 text-gray-900 font-bold text-lg focus:outline-none bg-transparent"
               />
             </div>
-
             <span className="text-gray-500 text-sm">per VEEC (excl. GST)</span>
-
-            {/* Live rebate preview */}
             {veuResult && (
               <div className="ml-auto flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-4 py-2">
                 <span className="text-xs text-orange-600 font-medium">
@@ -318,7 +313,6 @@ export default function CalculatorForm() {
                 </span>
               </div>
             )}
-
             <button
               onClick={fetchCurrentVeecPrice}
               title="Reset to price stored in database"
