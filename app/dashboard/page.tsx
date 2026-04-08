@@ -6,10 +6,12 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import CalculatorForm from "@/components/CalculatorForm";
 import DashboardWidgets from "@/components/DashboardWidgets";
+import JobCards from "@/components/JobCards";
 
 export default function DashboardPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState("");
+  const [widgetKey, setWidgetKey] = useState(0); // used to refresh widgets after save
 
   useEffect(() => {
     loadUserRole();
@@ -28,6 +30,11 @@ export default function DashboardPage() {
     setRole(userData?.role?.toLowerCase().trim() || "installer");
   };
 
+  // Called after a job is saved — refreshes widgets + job cards
+  const handleJobSaved = () => {
+    setWidgetKey((k) => k + 1);
+  };
+
   return (
     <div className="flex min-h-screen bg-[#eef2f7]">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} role={role} />
@@ -40,11 +47,14 @@ export default function DashboardPage() {
         <Header />
 
         <div className="p-10">
-          {/* Stats */}
-          <DashboardWidgets />
+          {/* Dynamic Stats Widgets */}
+          <DashboardWidgets key={widgetKey} role={role} />
 
           {/* Calculator */}
-          <CalculatorForm />
+          <CalculatorForm onJobSaved={handleJobSaved} />
+
+          {/* Job Cards */}
+          <JobCards key={widgetKey} role={role} />
         </div>
       </main>
     </div>
