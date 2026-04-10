@@ -40,8 +40,8 @@ interface JobData {
   licensed_plumber_id: string;
 }
 
-interface Photo { id: string; photo_type: string; url: string; filename: string; }
-interface Document { id: string; doc_type: string; url: string; filename: string; }
+interface Photo { id: string; photo_type: string; url: string; filename: string; storage_path?: string; }
+interface Document { id: string; doc_type: string; url: string; filename: string; storage_path?: string; }
 
 // ─── Constants ───────────────────────────────────────────────
 const TABS = [
