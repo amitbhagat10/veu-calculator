@@ -9,16 +9,17 @@ interface Job {
   id: string;
   job_number: number;
   job_date: string;
-  customer_first_name: string;
-  customer_last_name: string;
-  customer_address: string;
-  suburb: string;
-  postcode: string;
-  job_type: string;
-  status: string;
-  veu_status: string;
-  cer_status: string;
-  progress: number;
+  customer_name?: string;        // legacy field
+  customer_first_name?: string;
+  customer_last_name?: string;
+  customer_address?: string;
+  suburb?: string;
+  postcode?: string;
+  job_type?: string;
+  status?: string;
+  veu_status?: string;
+  cer_status?: string;
+  progress?: number;
   activity?: { name: string };
 }
 
