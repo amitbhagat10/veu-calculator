@@ -209,10 +209,10 @@ export default function AdminJobsPage() {
                   </td>
                   <td className="px-5 py-4 text-sm text-gray-400">–</td>
                   <td className="px-5 py-4">
-                    {job.progress > 0 ? (
+                    {(job.progress ?? 0) > 0 ? (
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-gray-200 rounded-full h-1.5">
-                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${job.progress}%` }} />
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${job.progress ?? 0}%` }} />
                         </div>
                         <span className="text-xs text-gray-500">{job.progress}%</span>
                       </div>
