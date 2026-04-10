@@ -1,173 +1,164 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
-  Calculator, Users, Briefcase, LogOut,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  Menu, Calculator, Users, Briefcase, Settings,
+  ChevronDown, ChevronUp, LogOut,
 } from "lucide-react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-interface SidebarProps {
+type SidebarProps = {
   collapsed: boolean;
-  setCollapsed: (v: boolean) => void;
+  setCollapsed: (value: boolean) => void;
   role?: string;
-}
+};
 
 export default function Sidebar({ collapsed, setCollapsed, role }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isAdmin = (role || "").toLowerCase().trim() === "admin";
   const [jobsOpen, setJobsOpen] = useState(
-    pathname?.startsWith("/admin/jobs") || pathname?.startsWith("/jobs")
+    !!(pathname?.startsWith("/jobs") || pathname?.startsWith("/admin/jobs"))
   );
 
-  const isAdmin = role === "admin";
-
-  const signOut = async () => {
+  const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
 
-  const isActive = (path: string) => pathname === path;
-  const isPrefix = (path: string) => pathname?.startsWith(path);
-
-  const NavItem = ({
-    icon: Icon, label, path, onClick, indent = false,
-  }: {
-    icon: any; label: string; path?: string; onClick?: () => void; indent?: boolean;
-  }) => {
-    const active = path ? isActive(path) : false;
-    return (
-      <button
-        onClick={onClick || (() => path && router.push(path))}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-          indent ? "pl-10" : ""
-        } ${
-          active
-            ? "bg-white/15 text-white"
-            : "text-blue-100 hover:bg-white/10 hover:text-white"
-        }`}
-      >
-        <Icon size={18} className="shrink-0" />
-        {!collapsed && <span className="truncate">{label}</span>}
-      </button>
-    );
-  };
+  const isActive = (path: string) =>
+    pathname === path || (path !== "/dashboard" && (pathname ?? "").startsWith(path));
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full bg-[#1a2e5a] flex flex-col transition-all duration-300 z-30 ${
-        collapsed ? "w-16" : "w-64"
-      }`}
+      className={`fixed left-6 top-6 bottom-6 z-40 ${
+        collapsed ? "w-20" : "w-64"
+      } bg-white border border-gray-200 rounded-2xl shadow-xl flex flex-col transition-all duration-300`}
     >
-      {/* Logo */}
-      <div className="px-4 py-5 border-b border-white/10">
-        {!collapsed ? (
-          <div className="flex items-center gap-2">
-            <div className="bg-[#c8ff00] rounded-lg px-2 py-1">
-              <span className="text-[#1a2e5a] font-black text-sm tracking-tight">Rebate</span>
-              <span className="text-[#1a2e5a] text-lg font-black">⚡</span>
-              <span className="text-[#1a2e5a] font-black text-sm tracking-tight">Hub</span>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-[#c8ff00] rounded-lg w-8 h-8 flex items-center justify-center">
-            <span className="text-[#1a2e5a] font-black text-base">⚡</span>
-          </div>
+      {/* Logo — restore original GP HVAC logo */}
+      <div className="p-5 flex items-center justify-between border-b border-gray-200">
+        {!collapsed && (
+          <img
+            src="/gp-logo-1.svg"
+            alt="GP HVAC"
+            className="w-36 transition-all duration-300"
+          />
         )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="text-gray-600 hover:text-gray-900 transition"
+        >
+          <Menu size={18} />
+        </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        <NavItem icon={Calculator} label="Calculator" path="/dashboard" />
+      <nav className="flex-1 px-3 space-y-1 pt-4 overflow-y-auto">
 
+        {/* Calculator */}
+        <motion.a
+          href="/dashboard"
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className={`flex items-center gap-3 p-3 rounded-lg transition ${
+            isActive("/dashboard")
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          }`}
+        >
+          <Calculator size={18} />
+          {!collapsed && <span className="font-medium">Calculator</span>}
+        </motion.a>
+
+        {/* Users (admin only) */}
         {isAdmin && (
-          <NavItem icon={Users} label="Users" path="/admin/users" />
-        )}
-
-        {/* Jobs with sub-menu */}
-        <div>
-          <button
-            onClick={() => setJobsOpen(o => !o)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-              isPrefix("/admin/jobs") || isPrefix("/jobs")
-                ? "bg-white/15 text-white"
-                : "text-blue-100 hover:bg-white/10 hover:text-white"
+          <motion.a
+            href="/admin/users"
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${
+              isActive("/admin/users")
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <Briefcase size={18} className="shrink-0" />
+            <Users size={18} />
+            {!collapsed && <span className="font-medium">Users</span>}
+          </motion.a>
+        )}
+
+        {/* Jobs with expandable sub-menu */}
+        <div>
+          <button
+            onClick={() => !collapsed && setJobsOpen((o) => !o)}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${
+              isActive("/jobs") || isActive("/admin/jobs")
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
+          >
+            <Briefcase size={18} />
             {!collapsed && (
               <>
-                <span className="flex-1 text-left">Jobs</span>
+                <span className="font-medium flex-1 text-left">Jobs</span>
                 {jobsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </>
             )}
           </button>
 
+          {/* Sub-items */}
           {!collapsed && jobsOpen && (
-            <div className="mt-1 space-y-0.5">
-              {!isAdmin && (
-                <button
-                  onClick={() => router.push("/jobs")}
-                  className={`w-full flex items-center gap-3 pl-10 pr-4 py-2.5 rounded-lg text-sm transition-all ${
-                    isActive("/jobs")
-                      ? "bg-white/15 text-white font-medium"
-                      : "text-blue-200 hover:bg-white/10 hover:text-white"
+            <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-100 pl-3">
+              <a
+                href="/jobs"
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
+                  pathname === "/jobs"
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <Briefcase size={14} />
+                Installer Jobs
+              </a>
+              {isAdmin && (
+                <a
+                  href="/admin/jobs"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
+                    (pathname ?? "").startsWith("/admin/jobs")
+                      ? "bg-blue-50 text-blue-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <Briefcase size={15} className="shrink-0" />
-                  Installer Jobs
-                </button>
-              )}
-              {isAdmin && (
-                <>
-                  <button
-                    onClick={() => router.push("/jobs")}
-                    className={`w-full flex items-center gap-3 pl-10 pr-4 py-2.5 rounded-lg text-sm transition-all ${
-                      isActive("/jobs")
-                        ? "bg-white/15 text-white font-medium"
-                        : "text-blue-200 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <Briefcase size={15} />
-                    Installer Jobs
-                  </button>
-                  <button
-                    onClick={() => router.push("/admin/jobs")}
-                    className={`w-full flex items-center gap-3 pl-10 pr-4 py-2.5 rounded-lg text-sm transition-all ${
-                      isPrefix("/admin/jobs")
-                        ? "bg-white/15 text-white font-medium"
-                        : "text-blue-200 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <Briefcase size={15} />
-                    Admin Jobs
-                  </button>
-                </>
+                  <Briefcase size={14} />
+                  Admin Jobs
+                </a>
               )}
             </div>
           )}
         </div>
       </nav>
 
-      {/* Bottom */}
-      <div className="px-2 py-4 border-t border-white/10 space-y-1">
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-200 space-y-1">
+        <a
+          href="/settings"
+          className="flex items-center gap-3 p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+        >
+          <Settings size={18} />
+          {!collapsed && <span className="font-medium">Settings</span>}
+        </a>
         <button
-          onClick={signOut}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-all"
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
         >
           <LogOut size={18} />
-          {!collapsed && <span>Sign Out</span>}
+          {!collapsed && <span className="font-medium">Sign Out</span>}
         </button>
       </div>
-
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 bg-[#1a2e5a] border border-white/20 rounded-full w-6 h-6 flex items-center justify-center text-white hover:bg-[#243a70] transition shadow-md"
-      >
-        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-      </button>
     </aside>
   );
 }
