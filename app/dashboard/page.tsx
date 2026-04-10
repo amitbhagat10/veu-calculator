@@ -4,57 +4,45 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
-import CalculatorForm from "@/components/CalculatorForm";
 import DashboardWidgets from "@/components/DashboardWidgets";
+import CalculatorForm from "@/components/CalculatorForm";
 import JobCards from "@/components/JobCards";
 
 export default function DashboardPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState("");
-  const [widgetKey, setWidgetKey] = useState(0); // used to refresh widgets after save
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    loadUserRole();
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) return;
+      supabase.from("users").select("role").eq("id", data.user.id).single()
+        .then(({ data: u }) =>
+          setRole(u?.role?.toLowerCase().trim() ?? "installer")
+        );
+    });
   }, []);
-
-  const loadUserRole = async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data?.user) return;
-
-    const { data: userData } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
-
-    setRole(userData?.role?.toLowerCase().trim() || "installer");
-  };
-
-  // Called after a job is saved — refreshes widgets + job cards
-  const handleJobSaved = () => {
-    setWidgetKey((k) => k + 1);
-  };
 
   return (
     <div className="flex min-h-screen bg-[#eef2f7]">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} role={role} />
 
+      {/*
+        The sidebar uses left-6 (24px), top-6 (24px) positioning (floating card).
+        Width: collapsed = 72px, expanded = 256px.
+        Main content margin = sidebar_left_offset (24) + sidebar_width + gap (24)
+        collapsed : 24 + 72  + 24 = 120  → ml-[120px]  ≈ ml-32 (128) — close enough
+        expanded  : 24 + 256 + 24 = 304  → ml-[304px]
+      */}
       <main
-        className={`flex-1 transition-all duration-300 ${
-          collapsed ? "ml-32" : "ml-80"
-        }`}
+        className="flex-1 min-w-0 transition-all duration-300"
+        style={{ marginLeft: collapsed ? 120 : 304 }}
       >
         <Header />
-
-        <div className="p-10">
-          {/* Dynamic Stats Widgets */}
-          <DashboardWidgets key={widgetKey} role={role} />
-
-          {/* Calculator */}
-          <CalculatorForm onJobSaved={handleJobSaved} />
-
-          {/* Job Cards */}
-          <JobCards key={widgetKey} role={role} />
+        <div className="p-8">
+          <DashboardWidgets key={`w-${refreshKey}`} role={role} />
+          <CalculatorForm onJobSaved={() => setRefreshKey(k => k + 1)} />
+          <JobCards key={`j-${refreshKey}`} role={role} />
         </div>
       </main>
     </div>

@@ -1,213 +1,240 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { RefreshCw, Send, UserCheck, UserX, ChevronUp, ChevronDown } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
+import { Search, Plus } from "lucide-react";
 
-interface User {
+interface Job {
   id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  status: string;
-  created_at: string;
-  user_number?: number;
+  job_number?: number;
+  job_date?: string;
+  customer_name?: string;
+  customer_first_name?: string;
+  customer_last_name?: string;
+  customer_address?: string;
+  suburb?: string;
+  postcode?: string;
+  job_type?: string;
+  veu_status?: string;
+  cer_status?: string;
+  progress?: number;
+  activity?: { name: string };
+  [key: string]: any;
 }
 
-export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [sortField, setSortField] = useState<"id" | "full_name">("id");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [rowsPerPage, setRowsPerPage] = useState(100);
-  const [page, setPage] = useState(0);
+const veuBadge: Record<string, string> = {
+  "Draft":              "bg-gray-100 text-gray-500",
+  "Pending":            "bg-yellow-100 text-yellow-700",
+  "Veu Submitted":      "bg-emerald-100 text-emerald-700",
+  "Regulator Approved": "bg-green-100 text-green-700",
+  "Approved":           "bg-green-100 text-green-700",
+  "Rejected":           "bg-red-100 text-red-600",
+};
+const cerBadge: Record<string, string> = {
+  "Approved": "bg-green-100 text-green-700",
+  "Pending":  "bg-yellow-100 text-yellow-700",
+};
 
-  useEffect(() => { fetchUsers(); }, []);
+export default function AdminJobsPage() {
+  const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
+  const [role, setRole]           = useState("admin");
+  const [jobs, setJobs]           = useState<Job[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  const fetchUsers = async () => {
+  useEffect(() => { init(); }, []);
+
+  const init = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) { router.push("/login"); return; }
+    const { data: u } = await supabase.from("users").select("role").eq("id", auth.user.id).single();
+    setRole(u?.role?.toLowerCase() ?? "admin");
+    await fetchJobs();
+  };
+
+  const fetchJobs = async () => {
     setLoading(true);
     const { data } = await supabase
-      .from("users")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (data) {
-      setUsers(data.map((u, i) => ({ ...u, user_number: i + 1 })));
-    }
+      .from("jobs")
+      .select("*, activity:activities(name)")
+      .order("created_at", { ascending: false });
+    setJobs((data as Job[]) ?? []);
     setLoading(false);
   };
 
-  const toggleSort = (field: "id" | "full_name") => {
-    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortField(field); setSortDir("asc"); }
+  const handleCreate = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    const { data: job } = await supabase.from("jobs").insert({
+      user_id:    auth?.user?.id,
+      job_date:   new Date().toISOString().split("T")[0],
+      veu_status: "Draft", cer_status: "--",
+      status:     "Pending", progress:  0,
+      job_type:   "Space Heating Cooling",
+    }).select().single();
+    if (job) router.push(`/admin/jobs/${job.id}`);
   };
 
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const getName = (j: Job) =>
+    [j.customer_first_name, j.customer_last_name].filter(Boolean).join(" ")
+    || j.customer_name || "—";
+
+  const getAddr = (j: Job) => {
+    const s = [j.customer_address || j.suburb, j.postcode ? `${j.postcode}, VIC` : "VIC"]
+      .filter(Boolean).join(", ");
+    return s.length > 44 ? s.slice(0, 44) + "…" : s;
   };
 
-  const toggleAll = () => {
-    if (selected.size === users.length) setSelected(new Set());
-    else setSelected(new Set(users.map(u => u.id)));
-  };
+  const getType = (j: Job) =>
+    (j.activity?.name || j.job_type || "Space Heating Cooling")
+      .replace("Space heating and cooling - High efficiency air conditioning", "Space Heating Cooling");
 
-  const sorted = [...users].sort((a, b) => {
-    const av = sortField === "id" ? (a.user_number ?? 0) : a.full_name;
-    const bv = sortField === "id" ? (b.user_number ?? 0) : b.full_name;
-    return sortDir === "asc"
-      ? (typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number))
-      : (typeof bv === "string" ? bv.localeCompare(av as string) : (bv as number) - (av as number));
+  const statuses = ["All","Draft","Pending","Veu Submitted","Regulator Approved","Approved","Rejected"];
+
+  const filtered = jobs.filter(j => {
+    const q = search.toLowerCase();
+    const nameMatch = !q
+      || getName(j).toLowerCase().includes(q)
+      || (j.suburb ?? "").toLowerCase().includes(q)
+      || String(j.job_number ?? "").includes(q);
+    return nameMatch && (statusFilter === "All" || j.veu_status === statusFilter);
   });
 
-  const paginated = sorted.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-  const totalPages = Math.ceil(sorted.length / rowsPerPage);
-
-  const handleEnable = async () => {
-    for (const id of selected) {
-      await supabase.from("users").update({ status: "Enabled" }).eq("id", id);
-    }
-    fetchUsers();
-    setSelected(new Set());
-  };
-
-  const SortIcon = ({ field }: { field: string }) =>
-    sortField === field
-      ? (sortDir === "asc" ? <ChevronUp size={14} className="inline ml-1" /> : <ChevronDown size={14} className="inline ml-1" />)
-      : <ChevronUp size={14} className="inline ml-1 opacity-30" />;
+  const ml = collapsed ? 120 : 304;
 
   return (
-    <div className="p-10">
-      <h1 className="text-3xl font-bold text-[#1a2e5a] mb-1">Users</h1>
-      <div className="w-16 h-1 bg-[#c8ff00] rounded mb-8" />
+    <div className="flex min-h-screen bg-[#eef2f7]">
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} role={role} />
 
-      {/* Actions */}
-      <div className="flex gap-3 mb-6">
-        <button
-          disabled={selected.size === 0}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-        >
-          <Send size={14} />
-          RESEND WELCOME EMAIL
-        </button>
-        <button
-          onClick={handleEnable}
-          disabled={selected.size === 0}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-        >
-          ENABLE
-        </button>
-        <div className="ml-auto">
-          <button onClick={fetchUsers} className="p-2 text-gray-400 hover:text-gray-700 transition">
-            <RefreshCw size={16} />
-          </button>
-        </div>
-      </div>
+      <main className="flex-1 min-w-0 transition-all duration-300" style={{ marginLeft: ml }}>
+        <Header />
+        <div className="p-8">
 
-      {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="w-12 px-4 py-4">
-                <input
-                  type="checkbox"
-                  checked={selected.size === users.length && users.length > 0}
-                  onChange={toggleAll}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600"
-                />
-              </th>
-              <th
-                className="px-4 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:text-gray-900 select-none w-24"
-                onClick={() => toggleSort("id")}
-              >
-                id <SortIcon field="id" />
-              </th>
-              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
-              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Email</th>
-              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Roles</th>
-              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [...Array(5)].map((_, i) => (
-                <tr key={i} className="border-b border-gray-100">
-                  {[...Array(6)].map((_, j) => (
-                    <td key={j} className="px-4 py-4">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : paginated.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-gray-400">No users found</td>
-              </tr>
-            ) : (
-              paginated.map((user) => (
-                <tr
-                  key={user.id}
-                  className={`border-b border-gray-100 hover:bg-gray-50 transition ${selected.has(user.id) ? "bg-blue-50" : ""}`}
-                >
-                  <td className="px-4 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(user.id)}
-                      onChange={() => toggleSelect(user.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
-                    />
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{user.user_number}</td>
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900">{user.full_name}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{user.email || "—"}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600 capitalize">{user.role}</td>
-                  <td className="px-4 py-4">
-                    <span className={`text-sm font-medium ${
-                      user.status === "Enabled" ? "text-gray-700" : "text-red-500"
-                    }`}>
-                      {user.status || "Enabled"}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100 gap-6">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>Rows per page:</span>
-            <select
-              value={rowsPerPage}
-              onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h1 className="text-2xl font-bold text-[#1a2e5a]">Jobs</h1>
+              <div className="w-12 h-1 bg-[#c8ff00] rounded mt-1" />
+            </div>
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 bg-[#1a2e5a] text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-[#243a70] transition text-sm shadow-sm"
             >
-              {[10, 25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+              <Plus size={16} /> Create Job
+            </button>
           </div>
-          <span className="text-sm text-gray-600">
-            {page * rowsPerPage + 1}–{Math.min((page + 1) * rowsPerPage, sorted.length)} of {sorted.length}
-          </span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 transition"
-            >‹</button>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 transition"
-            >›</button>
+
+          {/* Search + filter */}
+          <div className="flex gap-3 mt-6 mb-5 flex-wrap items-center">
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search field"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {statuses.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    statusFilter === s
+                      ? "bg-[#1a2e5a] text-white shadow-sm"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[820px]">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    {["ID","Activity Date","Customer Name / Address","Job Type","Status ▾","CER Status","VEU Status","Actions"].map(h => (
+                      <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="border-b border-gray-50">
+                        {[...Array(8)].map((_, j) => (
+                          <td key={j} className="px-5 py-4">
+                            <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-5 py-16 text-center text-gray-400 text-sm">
+                        No jobs found
+                      </td>
+                    </tr>
+                  ) : filtered.map(job => (
+                    <tr key={job.id} className="border-b border-gray-50 hover:bg-gray-50/80 transition">
+                      <td className="px-5 py-4 text-sm font-semibold text-gray-800">
+                        {job.job_number || job.id.slice(0, 6).toUpperCase()}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-500">
+                        {job.job_date
+                          ? new Date(job.job_date).toLocaleDateString("en-AU", {
+                              day: "numeric", month: "long", year: "numeric"
+                            })
+                          : "—"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="text-sm font-semibold text-gray-900">{getName(job)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{getAddr(job)}</p>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-500">{getType(job)}</td>
+                      <td className="px-5 py-4">
+                        {job.veu_status && job.veu_status !== "--" ? (
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${veuBadge[job.veu_status] ?? "bg-gray-100 text-gray-600"}`}>
+                            {job.veu_status}
+                          </span>
+                        ) : <span className="text-gray-300 text-sm">—</span>}
+                      </td>
+                      <td className="px-5 py-4">
+                        {job.cer_status && job.cer_status !== "--" ? (
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cerBadge[job.cer_status] ?? "bg-gray-100 text-gray-600"}`}>
+                            {job.cer_status}
+                          </span>
+                        ) : <span className="text-gray-300 text-sm">–</span>}
+                      </td>
+                      <td className="px-5 py-4 text-gray-300 text-sm">–</td>
+                      <td className="px-5 py-4">
+                        <button
+                          onClick={() => router.push(`/admin/jobs/${job.id}`)}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 uppercase tracking-wide transition"
+                        >
+                          MANAGE
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
