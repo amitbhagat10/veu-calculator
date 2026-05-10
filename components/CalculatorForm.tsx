@@ -171,7 +171,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
     setCalcError(null);
     setSaveSuccess(false);
 
-    const { data, error } = await supabase.rpc("calculate_rebate_veu_website", {
+    const { data, error } = await supabase.rpc("calculate_rebate", {
       p_product_id:  selectedProduct,
       p_postcode:    Number(postcode),
       p_job_date:    jobDate,
