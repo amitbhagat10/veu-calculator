@@ -39,7 +39,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
   const [postcode, setPostcode] = useState("");
   const [jobDate, setJobDate] = useState("");
 
-  const [veecPrice, setVeecPrice] = useState<number>(83.60);
+  const [veecPrice, setVeecPrice] = useState<number>(83.6);
   const [veecPriceInput, setVeecPriceInput] = useState<string>("83.60");
 
   const [veuResult, setVeuResult] = useState<VEUResult | null>(null);
@@ -64,6 +64,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
       .select("param_value")
       .eq("param_name", "VEEC_PRICE")
       .single();
+
     if (!error && data) {
       const price = Number(data.param_value);
       setVeecPrice(price);
@@ -73,9 +74,12 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
 
   const handleVeecPriceChange = (value: string) => {
     setVeecPriceInput(value);
+
     const parsed = parseFloat(value);
+
     if (!isNaN(parsed) && parsed > 0) {
       setVeecPrice(parsed);
+
       if (veuResult) {
         setVeuResult({
           ...veuResult,
@@ -87,30 +91,119 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
   };
 
   const fetchActivities = async () => {
-    const { data } = await supabase.from("activities").select("*").order("name");
+    const { data, error } = await supabase
+      .from("activities")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Failed to fetch activities:", error.message);
+      return;
+    }
+
     if (data) setActivities(data);
   };
 
   const fetchScenarios = async (activityId: string) => {
-    const { data } = await supabase
-      .from("scenarios").select("*")
-      .eq("activity_id", activityId).order("name");
-    if (data) setScenarios(data);
+    // First try scenarios linked to the selected activity.
+    const { data, error } = await supabase
+      .from("scenarios")
+      .select("*")
+      .eq("activity_id", activityId)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Failed to fetch scenarios by activity:", error.message);
+    }
+
+    // If activity_id mapping is missing, fallback to all scenarios.
+    // This prevents the Scenario dropdown from becoming blank.
+    if (data && data.length > 0) {
+      setScenarios(data);
+      return;
+    }
+
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("scenarios")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (fallbackError) {
+      console.error("Failed to fetch fallback scenarios:", fallbackError.message);
+      setScenarios([]);
+      return;
+    }
+
+    setScenarios(fallbackData || []);
   };
 
   const fetchBrands = async (activityId: string) => {
-    const { data } = await supabase
-      .from("brands").select("*")
-      .eq("activity_id", activityId).order("name");
-    if (data) setBrands(data);
+    // First try brands linked to the selected activity.
+    const { data, error } = await supabase
+      .from("brands")
+      .select("*")
+      .eq("activity_id", activityId)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Failed to fetch brands by activity:", error.message);
+    }
+
+    // Fallback to all brands if activity_id mapping is missing.
+    if (data && data.length > 0) {
+      setBrands(data);
+      return;
+    }
+
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("brands")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (fallbackError) {
+      console.error("Failed to fetch fallback brands:", fallbackError.message);
+      setBrands([]);
+      return;
+    }
+
+    setBrands(fallbackData || []);
   };
 
   const fetchProducts = async (brandId: string, scenarioId?: string) => {
-    let query = supabase.from("products").select("*")
-      .eq("brand_id", brandId).order("model_name");
-    if (scenarioId) query = query.eq("scenario_id", scenarioId);
-    const { data } = await query;
-    if (data) setProducts(data);
+    // First try brand + scenario where available.
+    if (scenarioId) {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("brand_id", brandId)
+        .eq("scenario_id", scenarioId)
+        .order("model_name", { ascending: true });
+
+      if (error) {
+        console.error("Failed to fetch products by scenario:", error.message);
+      }
+
+      if (data && data.length > 0) {
+        setProducts(data);
+        return;
+      }
+    }
+
+    // Fallback to all products for the selected brand.
+    // This prevents the Model dropdown from becoming blank when scenario_id is not maintained on products.
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("products")
+      .select("*")
+      .eq("brand_id", brandId)
+      .order("model_name", { ascending: true });
+
+    if (fallbackError) {
+      console.error("Failed to fetch fallback products:", fallbackError.message);
+      setProducts([]);
+      return;
+    }
+
+    setProducts(fallbackData || []);
   };
 
   const selectedActivityLabel =
@@ -124,12 +217,19 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
     setSelectedScenario("");
     setSelectedBrand("");
     setSelectedProduct("");
-    setScenarios([]); setBrands([]); setProducts([]);
-    setVeuResult(null); setCalcError(null);
+    setScenarios([]);
+    setBrands([]);
+    setProducts([]);
+    setVeuResult(null);
+    setCalcError(null);
     setSaveSuccess(false);
+
     if (!value) return;
+
     await fetchBrands(value);
+
     const activityName = activities.find((a) => a.id === value)?.name || "";
+
     if (activityName !== "Water Heating - New Install / No Decommissioning") {
       await fetchScenarios(value);
     }
@@ -137,17 +237,24 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
 
   const handleScenarioChange = (value: string) => {
     setSelectedScenario(value);
-    setSelectedBrand(""); setSelectedProduct("");
-    setProducts([]); setVeuResult(null); setCalcError(null);
+    setSelectedBrand("");
+    setSelectedProduct("");
+    setProducts([]);
+    setVeuResult(null);
+    setCalcError(null);
     setSaveSuccess(false);
   };
 
   const handleBrandChange = async (value: string) => {
     setSelectedBrand(value);
-    setSelectedProduct(""); setProducts([]);
-    setVeuResult(null); setCalcError(null);
+    setSelectedProduct("");
+    setProducts([]);
+    setVeuResult(null);
+    setCalcError(null);
     setSaveSuccess(false);
+
     if (!value) return;
+
     if (hideScenario) {
       await fetchProducts(value);
     } else {
@@ -161,6 +268,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
       alert("Please complete all fields");
       return;
     }
+
     if (!hideScenario && !selectedScenario) {
       alert("Please select a scenario");
       return;
@@ -171,21 +279,28 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
     setCalcError(null);
     setSaveSuccess(false);
 
-    const { data, error } = await supabase.rpc("calculate_rebate", {
-      p_product_id:  selectedProduct,
-      p_postcode:    Number(postcode),
-      p_job_date:    jobDate,
+    const { data, error } = await supabase.rpc("calculate_rebate_veu_website", {
+      p_product_id: selectedProduct,
+      p_postcode: Number(postcode),
+      p_job_date: jobDate,
       p_activity_id: selectedActivity,
       p_scenario_id: selectedScenario || null,
-      p_veec_price:  veecPrice,
+      p_veec_price: veecPrice,
     });
 
     setLoading(false);
 
-    if (error) { setCalcError("Calculation error: " + error.message); return; }
+    if (error) {
+      setCalcError("Calculation error: " + error.message);
+      return;
+    }
 
     const result = data as VEUResult;
-    if (result?.error) { setCalcError(result.error); return; }
+
+    if (result?.error) {
+      setCalcError(result.error);
+      return;
+    }
 
     setVeuResult(result);
   };
@@ -201,6 +316,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
     setSaveSuccess(false);
 
     const { data: userData } = await supabase.auth.getUser();
+
     if (!userData?.user) {
       setSaveError("You must be logged in to save a job.");
       setSaving(false);
@@ -208,17 +324,17 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
     }
 
     const { error } = await supabase.from("jobs").insert({
-      user_id:           userData.user.id,
-      activity_id:       selectedActivity,
-      scenario_id:       selectedScenario || null,
-      product_id:        selectedProduct,
-      job_date:          jobDate,
-      postcode:          postcode,
-      customer_name:     customerName.trim(),
-      suburb:            suburb.trim(),
+      user_id: userData.user.id,
+      activity_id: selectedActivity,
+      scenario_id: selectedScenario || null,
+      product_id: selectedProduct,
+      job_date: jobDate,
+      postcode: postcode,
+      customer_name: customerName.trim(),
+      suburb: suburb.trim(),
       calculated_rebate: veuResult.rebate_value,
-      veec_count:        veuResult.veec_count,
-      status:            "Pending",
+      veec_count: veuResult.veec_count,
+      status: "Pending",
     });
 
     setSaving(false);
@@ -231,22 +347,36 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
     setSaveSuccess(true);
     setCustomerName("");
     setSuburb("");
+
     if (onJobSaved) onJobSaved();
   };
 
   const handleReset = () => {
-    setSelectedActivity(""); setSelectedScenario("");
-    setSelectedBrand(""); setSelectedProduct("");
-    setPostcode(""); setJobDate("");
-    setScenarios([]); setBrands([]); setProducts([]);
-    setVeuResult(null); setCalcError(null);
-    setCustomerName(""); setSuburb("");
-    setSaveSuccess(false); setSaveError(null);
+    setSelectedActivity("");
+    setSelectedScenario("");
+    setSelectedBrand("");
+    setSelectedProduct("");
+    setPostcode("");
+    setJobDate("");
+    setScenarios([]);
+    setBrands([]);
+    setProducts([]);
+    setVeuResult(null);
+    setCalcError(null);
+    setCustomerName("");
+    setSuburb("");
+    setSaveSuccess(false);
+    setSaveError(null);
   };
 
-  const selectedBrandLabel    = brands.find((b) => b.id === selectedBrand)?.name || "";
-  const selectedProductLabel  = products.find((p) => p.id === selectedProduct)?.model_name || "";
-  const selectedScenarioLabel = scenarios.find((s) => s.id === selectedScenario)?.name || "";
+  const selectedBrandLabel =
+    brands.find((b) => b.id === selectedBrand)?.name || "";
+
+  const selectedProductLabel =
+    products.find((p) => p.id === selectedProduct)?.model_name || "";
+
+  const selectedScenarioLabel =
+    scenarios.find((s) => s.id === selectedScenario)?.name || "";
 
   const selectClass =
     "w-full rounded-lg border border-gray-300 bg-white text-gray-900 p-3 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed";
@@ -261,7 +391,6 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
       </div>
 
       <div className="bg-white border border-gray-200 rounded-2xl shadow-md p-8 md:p-10">
-
         {/* VEEC Spot Price */}
         <div className="mb-8 p-5 bg-blue-50 border border-blue-200 rounded-xl">
           <div className="flex items-center gap-2 mb-1">
@@ -270,42 +399,63 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
               VEEC Spot Price ($/certificate)
             </label>
           </div>
+
           <p className="text-xs text-blue-600 mb-4">
             Market price changes daily. Check at{" "}
-            <a href="https://northmoregordon.com/certificate-prices/"
-              target="_blank" rel="noopener noreferrer"
-              className="underline font-medium hover:text-blue-800">
+            <a
+              href="https://northmoregordon.com/certificate-prices/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium hover:text-blue-800"
+            >
               Northmore Gordon
-            </a>{" "}or{" "}
-            <a href="https://www.ecovantage.com.au/victorian-energy-upgrades/"
-              target="_blank" rel="noopener noreferrer"
-              className="underline font-medium hover:text-blue-800">
+            </a>{" "}
+            or{" "}
+            <a
+              href="https://www.ecovantage.com.au/victorian-energy-upgrades/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium hover:text-blue-800"
+            >
               Ecovantage
-            </a>. Current: ~$83.50–$84.00
+            </a>
+            . Current: ~$83.50–$84.00
           </p>
+
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 bg-white border border-blue-300 rounded-lg px-3 py-2">
               <span className="text-gray-500 font-medium">$</span>
               <input
-                type="number" step="0.01" min="0" max="200"
+                type="number"
+                step="0.01"
+                min="0"
+                max="200"
                 value={veecPriceInput}
                 onChange={(e) => handleVeecPriceChange(e.target.value)}
                 className="w-24 text-gray-900 font-bold text-lg focus:outline-none bg-transparent"
               />
             </div>
+
             <span className="text-gray-500 text-sm">per VEEC (excl. GST)</span>
+
             {veuResult && (
               <div className="ml-auto flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-4 py-2">
-                <span className="text-xs text-orange-600 font-medium">Live rebate:</span>
+                <span className="text-xs text-orange-600 font-medium">
+                  Live rebate:
+                </span>
                 <span className="text-orange-600 font-bold">
                   ${(veuResult.veec_count * veecPrice).toLocaleString("en-AU", {
-                    minimumFractionDigits: 2, maximumFractionDigits: 2,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
                   })}
                 </span>
               </div>
             )}
-            <button onClick={fetchCurrentVeecPrice}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition ml-auto">
+
+            <button
+              onClick={fetchCurrentVeecPrice}
+              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition ml-auto"
+            >
               <RefreshCw size={12} /> Reset to DB price
             </button>
           </div>
@@ -313,13 +463,19 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
 
         {/* Activity */}
         <div className="mb-8">
-          <label className="block font-semibold mb-2 text-gray-800">Activity</label>
-          <select value={selectedActivity}
+          <label className="block font-semibold mb-2 text-gray-800">
+            Activity
+          </label>
+          <select
+            value={selectedActivity}
             onChange={(e) => handleActivityChange(e.target.value)}
-            className={selectClass}>
+            className={selectClass}
+          >
             <option value="">Select Activity</option>
             {activities.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
             ))}
           </select>
         </div>
@@ -327,13 +483,19 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
         {/* Scenario */}
         {selectedActivity && !hideScenario && (
           <div className="mb-8">
-            <label className="block font-semibold mb-2 text-gray-800">Scenario</label>
-            <select value={selectedScenario}
+            <label className="block font-semibold mb-2 text-gray-800">
+              Scenario
+            </label>
+            <select
+              value={selectedScenario}
               onChange={(e) => handleScenarioChange(e.target.value)}
-              className={selectClass}>
+              className={selectClass}
+            >
               <option value="">Select Scenario</option>
               {scenarios.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </select>
           </div>
@@ -343,28 +505,42 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
         {selectedActivity && (
           <div className="mb-10">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Product</h2>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block font-semibold text-gray-900 mb-2">Brand</label>
-                <select value={selectedBrand}
+                <label className="block font-semibold text-gray-900 mb-2">
+                  Brand
+                </label>
+                <select
+                  value={selectedBrand}
                   onChange={(e) => handleBrandChange(e.target.value)}
                   disabled={!hideScenario && !selectedScenario}
-                  className={selectClass}>
+                  className={selectClass}
+                >
                   <option value="">Select Brand</option>
                   {brands.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="block font-semibold text-gray-900 mb-2">Model</label>
-                <select value={selectedProduct}
+                <label className="block font-semibold text-gray-900 mb-2">
+                  Model
+                </label>
+                <select
+                  value={selectedProduct}
                   onChange={(e) => setSelectedProduct(e.target.value)}
                   disabled={!selectedBrand}
-                  className={selectClass}>
+                  className={selectClass}
+                >
                   <option value="">Select Model</option>
                   {products.map((p) => (
-                    <option key={p.id} value={p.id}>{p.model_name}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.model_name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -375,27 +551,46 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
         {/* Job Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <div>
-            <label className="block font-semibold text-gray-900 mb-2">Date</label>
-            <input type="date" value={jobDate}
+            <label className="block font-semibold text-gray-900 mb-2">
+              Date
+            </label>
+            <input
+              type="date"
+              value={jobDate}
               onChange={(e) => setJobDate(e.target.value)}
-              className={selectClass} />
+              className={selectClass}
+            />
           </div>
+
           <div>
-            <label className="block font-semibold text-gray-900 mb-2">Postcode</label>
-            <input type="text" maxLength={4} value={postcode}
+            <label className="block font-semibold text-gray-900 mb-2">
+              Postcode
+            </label>
+            <input
+              type="text"
+              maxLength={4}
+              value={postcode}
               onChange={(e) => setPostcode(e.target.value.replace(/\D/g, ""))}
-              placeholder="e.g. 3064" className={selectClass} />
+              placeholder="e.g. 3064"
+              className={selectClass}
+            />
           </div>
         </div>
 
         {/* Buttons */}
         <div className="flex justify-between">
-          <button onClick={handleReset}
-            className="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-medium">
+          <button
+            onClick={handleReset}
+            className="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-medium"
+          >
             Reset
           </button>
-          <button onClick={handleCalculate} disabled={loading}
-            className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition font-medium disabled:opacity-60">
+
+          <button
+            onClick={handleCalculate}
+            disabled={loading}
+            className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition font-medium disabled:opacity-60"
+          >
             {loading ? "Calculating..." : "Calculate"}
           </button>
         </div>
@@ -443,6 +638,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
                         className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       />
                     </div>
+
                     <div>
                       <label className="block font-medium text-gray-700 mb-1 text-sm">
                         Suburb <span className="text-red-500">*</span>
@@ -474,6 +670,7 @@ export default function CalculatorForm({ onJobSaved }: { onJobSaved?: () => void
                         ${veuResult.rebate_value.toLocaleString()}
                       </span>
                     </div>
+
                     <button
                       onClick={handleSaveJob}
                       disabled={saving || !customerName.trim() || !suburb.trim()}
