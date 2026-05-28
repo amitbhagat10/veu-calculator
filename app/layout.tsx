@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GP Solar | VEU Calculator",
+  title: "GP HVAC | VEU Calculator",
   description: "VEU Rebate Calculator",
   icons: {
     icon: "/logo.png",
