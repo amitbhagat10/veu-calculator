@@ -90,7 +90,7 @@ export default function ResultCard({ veuResult, brand, model, activity, scenario
           GHG Equivalent Reduction
         </span>
         <span className="text-lg font-bold text-green-700">
-          {veuResult.ghg_reduction.toFixed(3)} t CO₂-e
+          {Number(veuResult.ghg_reduction ?? 0).toFixed(3)} t CO₂-e
         </span>
       </div>
 
@@ -123,10 +123,10 @@ export default function ResultCard({ veuResult, brand, model, activity, scenario
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <Row label="GSFheat" value={veuResult.gsf_heat.toFixed(4)} />
+                  <Row label="GSFheat" value={Number(veuResult.gsf_heat ?? 0).toFixed(4)} />
                   <Row label="BTLheat" value={`${veuResult.btl_heat} MWh/kW`} />
-                  <Row label="HSPF (upgrade)" value={veuResult.hspf_upgrade.toFixed(3)} />
-                  <Row label="Heating Savings" value={`${veuResult.heating_savings.toFixed(4)} t CO₂-e/kW`} />
+                  <Row label="HSPF (upgrade)" value={Number(veuResult.hspf_upgrade ?? 0).toFixed(3)} />
+                  <Row label="Heating Savings" value={`${Number(veuResult.heating_savings ?? 0).toFixed(4)} t CO₂-e/kW`} />
                 </div>
               </div>
 
@@ -139,10 +139,10 @@ export default function ResultCard({ veuResult, brand, model, activity, scenario
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <Row label="GSFcool" value={veuResult.gsf_cool.toFixed(4)} />
+                  <Row label="GSFcool" value={Number(veuResult.gsf_cool ?? 0).toFixed(4)} />
                   <Row label="BTLcool" value={`${veuResult.btl_cool} MWh/kW`} />
-                  <Row label="TCSPF (upgrade)" value={veuResult.tcspf_upgrade.toFixed(3)} />
-                  <Row label="Cooling Savings" value={`${veuResult.cooling_savings.toFixed(4)} t CO₂-e/kW`} />
+                  <Row label="TCSPF (upgrade)" value={Number(veuResult.tcspf_upgrade ?? 0).toFixed(3)} />
+                  <Row label="Cooling Savings" value={`${Number(veuResult.cooling_savings ?? 0).toFixed(4)} t CO₂-e/kW`} />
                 </div>
               </div>
 
