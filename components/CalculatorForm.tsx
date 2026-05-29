@@ -175,48 +175,58 @@ const [jobDate, setJobDate] = useState("");
   };
 
   const fetchBrands = async (activityId: string) => {
-    let query = supabase.from("brands").select("*").order("name");
+  let query = supabase
+    .from("brands")
+    .select("*")
+    .eq("is_public_visible", true)
+    .order("name");
 
-    // Your existing database has activity_id on brands, so keep this filter.
-    // If a future table does not have activity_id, this catch prevents the page from crashing.
-    let { data, error } = await query.eq("activity_id", activityId);
+  // Your existing database has activity_id on brands, so keep this filter.
+  // If a future table does not have activity_id, this catch prevents the page from crashing.
+  let { data, error } = await query.eq("activity_id", activityId);
 
-    if (error) {
-      const fallback = await supabase.from("brands").select("*").order("name");
-      data = fallback.data;
-      error = fallback.error;
-    }
-
-    if (error) {
-      console.warn("Could not load brands", error);
-      setBrands([]);
-      return;
-    }
-
-    setBrands(data || []);
-  };
-
-  const fetchProducts = async (brandId: string, scenarioId?: string) => {
-    let query = supabase
-      .from("products")
+  if (error) {
+    const fallback = await supabase
+      .from("brands")
       .select("*")
-      .eq("brand_id", brandId)
-      .order("model_name");
+      .eq("is_public_visible", true)
+      .order("name");
 
-    if (scenarioId) {
-      query = query.eq("scenario_id", scenarioId);
-    }
+    data = fallback.data;
+    error = fallback.error;
+  }
 
-    const { data, error } = await query;
+  if (error) {
+    console.warn("Could not load brands", error);
+    setBrands([]);
+    return;
+  }
 
-    if (error) {
-      console.warn("Could not load products", error);
-      setProducts([]);
-      return;
-    }
+  setBrands(data || []);
+};
 
-    setProducts(data || []);
-  };
+const fetchProducts = async (brandId: string, scenarioId?: string) => {
+  let query = supabase
+    .from("products")
+    .select("*")
+    .eq("brand_id", brandId)
+    .eq("is_public_visible", true)
+    .order("model_name");
+
+  if (scenarioId) {
+    query = query.eq("scenario_id", scenarioId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn("Could not load products", error);
+    setProducts([]);
+    return;
+  }
+
+  setProducts(data || []);
+};
 
   const handleActivityChange = async (value: string) => {
     setSelectedActivity(value);
